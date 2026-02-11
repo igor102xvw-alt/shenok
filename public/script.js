@@ -118,6 +118,38 @@ function sendMessage() {
   }
 }
 
+// ==================== СТАТУС ПЕЧАТИ ====================
+
+let typingTimeout = null;
+const TYPING_DELAY = 3000; // 3 секунды неактивности = перестал печатать
+
+document.getElementById('message')?.addEventListener('input', () => {
+  // Пользователь начал печатать
+  socket.emit('typing', { isTyping: true });
+  
+  // Сбросить таймер
+  if (typingTimeout) {
+    clearTimeout(typingTimeout);
+  }
+  
+  // Если 3 секунды не печатает — отправить "перестал печатать"
+  typingTimeout = setTimeout(() => {
+    socket.emit('typing', { isTyping: false });
+  }, TYPING_DELAY);
+});
+
+// Получение статуса от других пользователей
+socket.on('user_typing', (data) => {
+  const typingIndicator = document.getElementById('typing-indicator');
+  
+  if (data.isTyping) {
+    typingIndicator.textContent = `${data.nickname} печатает...`;
+    typingIndicator.classList.remove('hidden');
+  } else {
+    typingIndicator.classList.add('hidden');
+  }
+});
+
 // Enter для отправки
 document.getElementById('message')?.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
@@ -148,3 +180,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
