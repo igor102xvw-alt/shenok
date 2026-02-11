@@ -9,105 +9,57 @@ body {
   background: #000;
   color: #66ff00;
   height: 100vh;
+  width: 100vw;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.screen {
+/* Экран входа — остаётся компактным */
+#login-screen {
   background: #111;
   border-radius: 15px;
   box-shadow: 0 10px 40px rgba(102, 255, 0, 0.3);
   width: 100%;
-  max-width: none;
+  max-width: 400px;
   height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-.hidden {
-  display: none !important;
-  position: absolute;
-  left: -9999px;
-  top: -9999px;
-}
-
-/* Login Screen */
-.login-container {
-  padding: 40px;
-  text-align: center;
+/* Экран чата — занимает ВЕСЬ экран */
+#chat-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
   display: flex;
-  flex-direction: column;
   justify-content: center;
-  height: 100%;
-}
-
-.login-container h1 {
-  margin-bottom: 30px;
-  color: #66ff00;
-  font-size: 28px;
-}
-
-.login-container input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 2px solid #66ff00;
-  border-radius: 8px;
-  background: #0a0a0a;
-  color: #fff;
-  font-size: 16px;
-  transition: all 0.3s;
-}
-
-.login-container input:focus {
-  border-color: #66ff00;
-  outline: none;
-  box-shadow: 0 0 10px rgba(102, 255, 0, 0.2);
-}
-
-.login-container button {
-  width: 100%;
-  padding: 12px;
-  background: #0a0a0a;
-  color: #66ff00;
-  border: 2px solid #66ff00;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: all 0.2s;
-  font-weight: bold;
-}
-
-.login-container button:hover {
-  background: #66ff00;
-  color: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 255, 0, 0.4);
-}
-
-.error {
-  color: #ff6666;
-  margin-top: 10px;
-  font-size: 14px;
+  align-items: center;
 }
 
 /* Основной контейнер приложения */
 .app-container {
   display: flex;
-  height: 100%;
   width: 100%;
-  max-width: none;
-  border-radius: 0;
+  height: 100%;
+  max-width: 1400px; /* Максимальная ширина для комфортного просмотра */
+  margin: 0 auto;
 }
 
 /* Левая панель: Список пользователей */
 .sidebar {
   width: 280px;
+  min-width: 280px;
   background: #0a0a0a;
   border-right: 1px solid #333;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 
 .sidebar-header {
@@ -192,6 +144,7 @@ body {
   flex-direction: column;
   background: #0a0a0a;
   overflow: hidden;
+  height: 100%;
 }
 
 .chat-header {
@@ -217,6 +170,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: calc(100% - 110px); /* Высота минус хедер и инпут */
 }
 
 .message {
@@ -288,6 +242,7 @@ body {
   border-top: 1px solid #333;
   display: flex;
   gap: 10px;
+  height: 70px;
 }
 
 .input-area input {
@@ -343,6 +298,71 @@ body {
   background: #44cc00;
 }
 
+/* Login Screen стили */
+.login-container {
+  padding: 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.login-container h1 {
+  margin-bottom: 30px;
+  color: #66ff00;
+  font-size: 28px;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 2px solid #66ff00;
+  border-radius: 8px;
+  background: #0a0a0a;
+  color: #fff;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.login-container input:focus {
+  border-color: #66ff00;
+  outline: none;
+  box-shadow: 0 0 10px rgba(102, 255, 0, 0.2);
+}
+
+.login-container button {
+  width: 100%;
+  padding: 12px;
+  background: #0a0a0a;
+  color: #66ff00;
+  border: 2px solid #66ff00;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.login-container button:hover {
+  background: #66ff00;
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 255, 0, 0.4);
+}
+
+.error {
+  color: #ff6666;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
   .app-container {
@@ -354,48 +374,14 @@ body {
     height: auto;
     border-right: none;
     border-bottom: 1px solid #333;
-  }
-
-  .sidebar-header {
-    padding: 10px 15px;
-  }
-
-  .users-list {
-    max-height: 200px;
+    max-height: 30%;
   }
 
   .chat-container {
-    height: calc(100% - 200px);
+    height: 70%;
   }
-}
-/* Основной контейнер */
-.app-container {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  overflow: hidden;
-}
 
-/* Левая панель */
-.sidebar {
-  width: 280px;
-  min-width: 280px;
-  flex-shrink: 0;
-}
-
-/* Правая панель */
-.chat-container {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-/* Сообщения */
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
+  .messages-container {
+    height: calc(100% - 110px);
+  }
 }
