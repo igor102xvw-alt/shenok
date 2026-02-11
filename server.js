@@ -92,7 +92,7 @@ socket.on('typing', (data) => {
 });
 
   // Проверка пароля и ника
-  socket.on('login', (data) => {
+  socket.on('login', async (data) => {
     if (data.password === SECRET_PASSWORD) {
       socket.nickname = data.nickname || 'Аноним';
       
@@ -256,6 +256,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
