@@ -38,6 +38,17 @@ function broadcastUsersList() {
 io.on('connection', (socket) => {
   console.log('Новый пользователь подключился:', socket.id);
 
+  // Статус печати
+socket.on('typing', (data) => {
+  if (!socket.nickname) return;
+  
+  // Отправляем статус всем, кроме отправителя
+  socket.broadcast.emit('user_typing', {
+    nickname: socket.nickname,
+    isTyping: data.isTyping
+  });
+});
+
   // Проверка пароля и ника
   socket.on('login', (data) => {
     if (data.password === SECRET_PASSWORD) {
@@ -104,3 +115,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
