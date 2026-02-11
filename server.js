@@ -92,49 +92,50 @@ socket.on('typing', (data) => {
 });
 
   // Проверка пароля и ника
-  socket.on('login', async (data) => {
-    if (data.password === SECRET_PASSWORD) {
-      socket.nickname = data.nickname || 'Аноним';
+  // Проверка пароля и ника
+socket.on('login', async (data) => { // ← ДОБАВЬ async
+  if (data.password === SECRET_PASSWORD) {
+    socket.nickname = data.nickname || 'Аноним';
+    
+    // Добавляем пользователя
+    users.set(socket.id, {
+      nickname: socket.nickname,
+      online: true
+    });
+    
+    // Отправляем успех
+    socket.emit('login_success');
+    
+    // Отправляем историю сообщений
+    // Загружаем историю из БД
+    try {
+      const result = await pool.query(
+        'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
+      );
       
-      // Добавляем пользователя
-      users.set(socket.id, {
-        nickname: socket.nickname,
-        online: true
-      });
+      const dbMessages = result.rows.map(row => ({
+        nickname: row.nickname,
+        text: row.text,
+        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      })).reverse();
       
-      // Отправляем успех
-      socket.emit('login_success');
-      
-      // Отправляем историю сообщений
-      // Загружаем историю из БД
-try {
-  const result = await pool.query(
-    'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
-  );
-  
-  const dbMessages = result.rows.map(row => ({
-    nickname: row.nickname,
-    text: row.text,
-    time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  })).reverse();
-  
-  socket.emit('history', dbMessages);
-} catch (err) {
-  console.error('❌ Ошибка загрузки истории:', err);
-  socket.emit('history', messages);
-};
-      
-      // Сообщаем всем о новом пользователе
-      io.emit('system_message', `${socket.nickname} присоединился к чату`);
-      
-      // Обновляем список пользователей для всех
-      broadcastUsersList();
-      
-      console.log(`${socket.nickname} вошёл в чат`);
-    } else {
-      socket.emit('login_error', 'Неверный пароль!');
+      socket.emit('history', dbMessages);
+    } catch (err) {
+      console.error('❌ Ошибка загрузки истории:', err);
+      socket.emit('history', messages);
     }
-  });
+    
+    // Сообщаем всем о новом пользователе
+    io.emit('system_message', `${socket.nickname} присоединился к чату`);
+    
+    // Обновляем список пользователей для всех
+    broadcastUsersList();
+    
+    console.log(`${socket.nickname} вошёл в чат`);
+  } else {
+    socket.emit('login_error', 'Неверный пароль!');
+  }
+});
 
 // Получение сообщения
 socket.on('message', async (data) => {
@@ -256,6 +257,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
