@@ -7,30 +7,47 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Экран входа -->
   <div id="login-screen" class="screen">
     <div class="login-container">
-      <h1>🔒puppy</h1>
+      <h1>puppy</h1>
       <input type="password" id="password" placeholder="Пароль" autocomplete="off">
-      <input type="text" id="nickname" placeholder="Ник (необязательно)">
+      <input type="text" id="nickname" placeholder="Ник">
       <button onclick="login()">Войти</button>
       <p id="error" class="error"></p>
     </div>
   </div>
 
+  <!-- Основной интерфейс -->
   <div id="chat-screen" class="screen hidden">
-    <div id="chat-header">
-      <h2>💬 Мой Мессенджер</h2>
-    </div>
-    <div id="messages"></div>
-    <div id="input-area">
-      <input type="text" id="message" placeholder="Напишите сообщение..." autocomplete="off">
-      <button onclick="sendMessage()">Отправить</button>
+    <div class="app-container">
+      <!-- Левая панель: Список пользователей -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>👥 Пользователи</h2>
+        </div>
+        <div class="users-list" id="users-list">
+          <!-- Список пользователей будет здесь -->
+        </div>
+      </div>
+
+      <!-- Правая панель: Чат -->
+      <div class="chat-container">
+        <div class="chat-header">
+          <h2>💬 Общий чат</h2>
+        </div>
+        <div class="messages-container" id="messages">
+          <!-- Сообщения будут здесь -->
+        </div>
+        <div class="input-area">
+          <input type="text" id="message" placeholder="Сообщение..." autocomplete="off">
+          <button onclick="sendMessage()">Отправить</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
-
 </html>
-
