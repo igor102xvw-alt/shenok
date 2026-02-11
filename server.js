@@ -4,8 +4,9 @@ const path = require('path');
 console.log("Проверка папки public:");
 console.log("Путь:", path.join(__dirname, 'public'));
 console.log("Существует?", fs.existsSync(path.join(__dirname, 'public')));
-console.log("Содержит index.html?", fs.existsSync(path.join(__dirname, 'public', 'index.html')));const express = require('express');
+console.log("Содержит index.html?", fs.existsSync(path.join(__dirname, 'public', 'index.html')));
 
+const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 
@@ -13,24 +14,42 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Настройки
-const PORT = 3001;
-const SECRET_PASSWORD = process.env.CHAT_PASSWORD || "secretparol322";
+// Пароль для входа
+const SECRET_PASSWORD = process.env.CHAT_PASSWORD || "supersecret123";
 
-// Храним сообщения в памяти
+// Подключаем статику
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Храним пользователей и сообщения
+const users = new Map(); // socket.id -> { nickname, online }
 const messages = [];
 
-// Раздаём статические файлы
-app.use(express.static(path.join(__dirname, 'public')));
+// Отправка списка пользователей всем клиентам
+function broadcastUsersList() {
+  const usersList = Array.from(users.values()).map(user => ({
+    nickname: user.nickname,
+    online: user.online
+  }));
+  
+  io.emit('users_update', usersList);
+}
 
 // Обработка подключений
 io.on('connection', (socket) => {
-  console.log('Новый пользователь подключился');
+  console.log('Новый пользователь подключился:', socket.id);
 
   // Проверка пароля и ника
   socket.on('login', (data) => {
     if (data.password === SECRET_PASSWORD) {
       socket.nickname = data.nickname || 'Аноним';
+      
+      // Добавляем пользователя
+      users.set(socket.id, {
+        nickname: socket.nickname,
+        online: true
+      });
+      
+      // Отправляем успех
       socket.emit('login_success');
       
       // Отправляем историю сообщений
@@ -38,6 +57,10 @@ io.on('connection', (socket) => {
       
       // Сообщаем всем о новом пользователе
       io.emit('system_message', `${socket.nickname} присоединился к чату`);
+      
+      // Обновляем список пользователей для всех
+      broadcastUsersList();
+      
       console.log(`${socket.nickname} вошёл в чат`);
     } else {
       socket.emit('login_error', 'Неверный пароль!');
@@ -48,10 +71,11 @@ io.on('connection', (socket) => {
   socket.on('message', (text) => {
     if (!socket.nickname) return;
     
+    const now = new Date();
     const message = {
       nickname: socket.nickname,
       text: text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
     messages.push(message);
@@ -59,14 +83,24 @@ io.on('connection', (socket) => {
     io.emit('message', message);
   });
 
-  // Отключение
+  // Отключение пользователя
   socket.on('disconnect', () => {
     if (socket.nickname) {
       console.log(`${socket.nickname} отключился`);
+      
+      // Удаляем пользователя
+      users.delete(socket.id);
+      
+      // Сообщаем всем об отключении
+      io.emit('system_message', `${socket.nickname} покинул чат`);
+      
+      // Обновляем список пользователей
+      broadcastUsersList();
     }
   });
 });
 
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Сервер запущен на http://localhost:${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
 });
