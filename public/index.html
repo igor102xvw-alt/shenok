@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой Мессенджер</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="login-screen" class="screen">
+    <div class="login-container">
+      <h1>🔒 Мой Мессенджер</h1>
+      <input type="password" id="password" placeholder="Пароль" autocomplete="off">
+      <input type="text" id="nickname" placeholder="Ник (необязательно)">
+      <button onclick="login()">Войти</button>
+      <p id="error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="chat-screen" class="screen hidden">
+    <div id="chat-header">
+      <h2>💬 Мой Мессенджер</h2>
+    </div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="message" placeholder="Напишите сообщение..." autocomplete="off">
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
