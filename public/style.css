@@ -366,6 +366,24 @@ body {
   display: none !important;
 }
 
+/* Индикатор печати */
+.typing-indicator {
+  padding: 10px 20px;
+  color: #66ff00;
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  height: 20px;
+  transition: opacity 0.3s;
+}
+
+.typing-indicator.hidden {
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
   .app-container {
@@ -388,4 +406,5 @@ body {
     height: calc(100% - 110px);
   }
 }
+
 
