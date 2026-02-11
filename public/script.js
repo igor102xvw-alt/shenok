@@ -79,7 +79,6 @@ socket.on('users_update', (users) => {
   });
 });
 
-// Переключение между чатами
 function switchChat(chatName) {
   currentChat = chatName;
   
@@ -93,22 +92,19 @@ function switchChat(chatName) {
   
   // Меняем заголовок чата
   const chatHeader = document.querySelector('.chat-header h2');
-  if (chatName === 'general') {
-    chatHeader.textContent = '💬 Общий чат';
-  } else {
-    chatHeader.textContent = `💬 ${chatName}`;
+  if (chatHeader) { // ← ДОБАВЬ ПРОВЕРКУ!
+    if (chatName === 'general') {
+      chatHeader.textContent = '💬 Общий чат';
+    } else {
+      chatHeader.textContent = `💬 ${chatName}`;
+    }
   }
   
   // Очищаем сообщения и загружаем нужные
   const messagesDiv = document.getElementById('messages');
   messagesDiv.innerHTML = '';
   
-  // Если общий чат — загружаем историю
-  if (chatName === 'general') {
-    socket.emit('get_history', 'general');
-  } else {
-    socket.emit('get_history', chatName);
-  }
+  socket.emit('get_history', chatName);
 }
 
 // ==================== СООБЩЕНИЯ ====================
@@ -118,10 +114,10 @@ socket.on('history', (messages) => {
 });
 
 socket.on('message', (msg) => {
-  // Если сообщение для приватного чата, проверяем, открыт ли этот чат
+  // Фильтруем сообщения только для текущего чата
   if (msg.to && msg.to !== 'general') {
     // Приватное сообщение
-    if (msg.to === currentChat || (msg.from && msg.from === currentChat)) {
+    if (msg.to === currentChat || msg.from === currentChat) {
       addMessage(msg);
     }
   } else {
@@ -245,6 +241,7 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
 
 
 
