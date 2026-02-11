@@ -375,6 +375,9 @@ body {
   text-align: center;
   height: 20px;
   transition: opacity 0.3s;
+  margin-top: 10px; /* ← ДОБАВИЛИ ОТСТУП СВЕРХУ */
+  background: rgba(10, 10, 10, 0.7); /* ← ДОБАВИЛИ ФОН */
+  border-radius: 8px; /* ← ДОБАВИЛИ СКРУГЛЕНИЕ */
 }
 
 .typing-indicator.hidden {
@@ -406,5 +409,6 @@ body {
     height: calc(100% - 110px);
   }
 }
+
 
 
