@@ -5,7 +5,7 @@
 }
 
 body {
-  font-family: 'Courier New', monospace;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #000;
   color: #66ff00;
   min-height: 100vh;
@@ -19,9 +19,8 @@ body {
 
 .screen {
   background: #111;
-  border: 2px solid #66ff00;
   border-radius: 15px;
-  box-shadow: 0 0 20px #66ff00, 0 0 40px #66ff00;
+  box-shadow: 0 10px 40px rgba(102, 255, 0, 0.3);
   width: 100%;
   max-width: 400px;
 }
@@ -42,17 +41,17 @@ body {
 .login-container h1 {
   margin-bottom: 30px;
   color: #66ff00;
-  text-shadow: 0 0 10px #66ff00;
+  font-size: 28px;
 }
 
 .login-container input {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
-  border: 2px solid #44cc00;
+  border: 2px solid #66ff00;
   border-radius: 8px;
   background: #0a0a0a;
-  color: #66ff00;
+  color: #fff;
   font-size: 16px;
   transition: all 0.3s;
 }
@@ -60,13 +59,13 @@ body {
 .login-container input:focus {
   border-color: #66ff00;
   outline: none;
-  box-shadow: 0 0 10px #66ff00;
+  box-shadow: 0 0 10px rgba(102, 255, 0, 0.2);
 }
 
 .login-container button {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
+  background: #0a0a0a;
   color: #66ff00;
   border: 2px solid #66ff00;
   border-radius: 8px;
@@ -75,14 +74,13 @@ body {
   margin-top: 20px;
   transition: all 0.2s;
   font-weight: bold;
-  text-shadow: 0 0 5px #66ff00;
 }
 
 .login-container button:hover {
   background: #66ff00;
   color: #000;
   transform: translateY(-2px);
-  box-shadow: 0 0 15px #66ff00;
+  box-shadow: 0 5px 15px rgba(102, 255, 0, 0.4);
 }
 
 .error {
@@ -118,23 +116,22 @@ body {
   border-radius: 15px;
   max-width: 80%;
   word-wrap: break-word;
-  border: 1px solid #33aa00;
+  background: #1a1a1a;
 }
 
 .message.own {
-  background: #0a0a0a;
-  border: 2px solid #66ff00;
-  color: #66ff00;
+  background: #2a2a2a;
+  color: #fff;
   margin-left: auto;
 }
 
 .message.system {
-  background: #1a1a1a;
-  color: #88ff44;
+  background: #151515;
+  color: #888;
   text-align: center;
   max-width: 100%;
   font-style: italic;
-  border: 1px dashed #44cc00;
+  border-radius: 10px;
 }
 
 .message-content {
@@ -147,25 +144,26 @@ body {
   margin-bottom: 4px;
   font-size: 14px;
   color: #66ff00;
-  text-shadow: 0 0 5px #66ff00;
 }
 
 .text {
   font-size: 16px;
+  color: #fff;
+  line-height: 1.4;
 }
 
 .time {
   font-size: 11px;
-  opacity: 0.8;
+  opacity: 0.6;
   margin-top: 4px;
   text-align: right;
-  color: #44cc00;
+  color: #666;
 }
 
 #input-area {
   padding: 15px;
   background: #111;
-  border-top: 2px solid #44cc00;
+  border-top: 1px solid #333;
   display: flex;
   gap: 10px;
 }
@@ -173,17 +171,17 @@ body {
 #input-area input {
   flex: 1;
   padding: 12px;
-  border: 2px solid #44cc00;
+  border: 2px solid #66ff00;
   border-radius: 25px;
   background: #0a0a0a;
-  color: #66ff00;
+  color: #fff;
   font-size: 16px;
 }
 
 #input-area input:focus {
   border-color: #66ff00;
   outline: none;
-  box-shadow: 0 0 10px #66ff00;
+  box-shadow: 0 0 10px rgba(102, 255, 0, 0.2);
 }
 
 #input-area button {
@@ -201,5 +199,5 @@ body {
 #input-area button:hover {
   background: #66ff00;
   color: #000;
-  box-shadow: 0 0 15px #66ff00;
+  box-shadow: 0 0 15px rgba(102, 255, 0, 0.4);
 }
