@@ -44,6 +44,29 @@ app.use(express.static(path.join(__dirname, 'public')));
 const users = new Map(); // socket.id -> { nickname, online }
 const messages = [];
 
+// Храним пользователей и сообщения
+const users = new Map();
+const messages = [];
+
+// Создание таблиц при запуске
+async function createTables() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        nickname VARCHAR(50) NOT NULL,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Таблица messages создана');
+  } catch (err) {
+    console.error('❌ Ошибка создания таблицы:', err);
+  }
+}
+
+createTables();
+
 // Отправка списка пользователей всем клиентам
 function broadcastUsersList() {
   const usersList = Array.from(users.values()).map(user => ({
@@ -84,7 +107,23 @@ socket.on('typing', (data) => {
       socket.emit('login_success');
       
       // Отправляем историю сообщений
-      socket.emit('history', messages);
+      // Загружаем историю из БД
+try {
+  const result = await pool.query(
+    'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
+  );
+  
+  const dbMessages = result.rows.map(row => ({
+    nickname: row.nickname,
+    text: row.text,
+    time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  })).reverse();
+  
+  socket.emit('history', dbMessages);
+} catch (err) {
+  console.error('❌ Ошибка загрузки истории:', err);
+  socket.emit('history', messages);
+};
       
       // Сообщаем всем о новом пользователе
       io.emit('system_message', `${socket.nickname} присоединился к чату`);
@@ -98,16 +137,35 @@ socket.on('typing', (data) => {
     }
   });
 
-  // Получение сообщения
-  socket.on('message', (text) => {
-    if (!socket.nickname) return;
-    
-    const now = new Date();
-    const message = {
-      nickname: socket.nickname,
-      text: text,
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+ // Получение сообщения
+socket.on('message', async (text) => {
+  if (!socket.nickname) return;
+  
+  const now = new Date();
+  const message = {
+    nickname: socket.nickname,
+    text: text,
+    time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+  
+  // Сохраняем в БД
+  try {
+    await pool.query(
+      'INSERT INTO messages (nickname, text) VALUES ($1, $2)',
+      [socket.nickname, text]
+    );
+    console.log('✅ Сообщение сохранено в БД');
+  } catch (err) {
+    console.error('❌ Ошибка сохранения сообщения:', err);
+  }
+  
+  messages.push(message);
+  if (messages.length > 100) {
+    messages.shift();
+  }
+  
+  io.emit('message', message);
+});
     
     messages.push(message);
     
@@ -135,5 +193,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
