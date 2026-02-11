@@ -34,33 +34,82 @@ socket.on('login_error', (msg) => {
 
 // ==================== СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
 
+// Текущий активный чат
+let currentChat = 'general'; // 'general' или ник пользователя
+
 socket.on('users_update', (users) => {
-  const usersList = document.getElementById('users-list');
-  usersList.innerHTML = '';
+  const chatsList = document.getElementById('chats-list');
+  chatsList.innerHTML = '';
   
+  // Добавляем "Общий чат" в начало
+  const generalChat = document.createElement('div');
+  generalChat.className = `chat-item general ${currentChat === 'general' ? 'active' : ''}`;
+  generalChat.dataset.chat = 'general';
+  generalChat.innerHTML = `
+    <div class="chat-avatar">👥</div>
+    <div class="chat-info">
+      <div class="chat-name">Общий чат</div>
+      <div class="chat-last-message">Все сообщения</div>
+    </div>
+  `;
+  generalChat.addEventListener('click', () => switchChat('general'));
+  chatsList.appendChild(generalChat);
+  
+  // Добавляем пользователей как приватные чаты
   users.forEach(user => {
-    const userDiv = document.createElement('div');
-    userDiv.className = 'user-item';
-    if (user.nickname === myNickname) {
-      userDiv.classList.add('active');
-    }
+    if (user.nickname === myNickname) return; // Не показываем себя
+    
+    const chatDiv = document.createElement('div');
+    chatDiv.className = `chat-item ${currentChat === user.nickname ? 'active' : ''}`;
+    chatDiv.dataset.chat = user.nickname;
     
     // Первая буква ника как аватарка
     const firstLetter = user.nickname.charAt(0).toUpperCase();
     
-    userDiv.innerHTML = `
-      <div class="user-avatar">${firstLetter}</div>
-      <div class="user-info">
-        <div class="user-nickname">${escapeHtml(user.nickname)}</div>
-        <div class="user-status ${user.online ? 'online' : ''}">
-          ${user.online ? 'в сети' : 'оффлайн'}
-        </div>
+    chatDiv.innerHTML = `
+      <div class="chat-avatar">${firstLetter}</div>
+      <div class="chat-info">
+        <div class="chat-name">${escapeHtml(user.nickname)}</div>
+        <div class="chat-last-message">${user.online ? 'в сети' : 'оффлайн'}</div>
       </div>
     `;
     
-    usersList.appendChild(userDiv);
+    chatDiv.addEventListener('click', () => switchChat(user.nickname));
+    chatsList.appendChild(chatDiv);
   });
 });
+
+// Переключение между чатами
+function switchChat(chatName) {
+  currentChat = chatName;
+  
+  // Обновляем выделение
+  document.querySelectorAll('.chat-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.chat === chatName) {
+      item.classList.add('active');
+    }
+  });
+  
+  // Меняем заголовок чата
+  const chatHeader = document.querySelector('.chat-header h2');
+  if (chatName === 'general') {
+    chatHeader.textContent = '💬 Общий чат';
+  } else {
+    chatHeader.textContent = `💬 ${chatName}`;
+  }
+  
+  // Очищаем сообщения и загружаем нужные
+  const messagesDiv = document.getElementById('messages');
+  messagesDiv.innerHTML = '';
+  
+  // Если общий чат — загружаем историю
+  if (chatName === 'general') {
+    socket.emit('get_history', 'general');
+  } else {
+    socket.emit('get_history', chatName);
+  }
+}
 
 // ==================== СООБЩЕНИЯ ====================
 
@@ -113,7 +162,12 @@ function sendMessage() {
   const text = input.value.trim();
   
   if (text) {
-    socket.emit('message', text);
+    // Отправляем сообщение в текущий чат
+    if (currentChat === 'general') {
+      socket.emit('message', { text, to: 'general' });
+    } else {
+      socket.emit('message', { text, to: currentChat });
+    }
     input.value = '';
   }
 }
@@ -180,4 +234,5 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
 
