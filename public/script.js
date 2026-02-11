@@ -118,7 +118,18 @@ socket.on('history', (messages) => {
 });
 
 socket.on('message', (msg) => {
-  addMessage(msg);
+  // Если сообщение для приватного чата, проверяем, открыт ли этот чат
+  if (msg.to && msg.to !== 'general') {
+    // Приватное сообщение
+    if (msg.to === currentChat || (msg.from && msg.from === currentChat)) {
+      addMessage(msg);
+    }
+  } else {
+    // Общее сообщение
+    if (currentChat === 'general') {
+      addMessage(msg);
+    }
+  }
 });
 
 socket.on('system_message', (text) => {
@@ -234,5 +245,6 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
 
 
