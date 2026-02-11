@@ -41,12 +41,11 @@ const SECRET_PASSWORD = process.env.CHAT_PASSWORD || "supersecret123";
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Храним пользователей и сообщения
-const users = new Map(); // socket.id -> { nickname, online }
-const messages = [];
-
-// Храним пользователей и сообщения
 const users = new Map();
 const messages = [];
+
+// Храним приватные сообщения
+const privateMessages = new Map(); // ключ: "от_кому", значение: массив сообщений
 
 // Создание таблиц при запуске
 async function createTables() {
@@ -137,9 +136,12 @@ try {
     }
   });
 
- // Получение сообщения
-socket.on('message', async (text) => {
+// Получение сообщения
+socket.on('message', async (data) => {
   if (!socket.nickname) return;
+  
+  const text = data.text;
+  const to = data.to || 'general'; // 'general' или ник получателя
   
   const now = new Date();
   const message = {
@@ -148,51 +150,113 @@ socket.on('message', async (text) => {
     time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
   
-  // Сохраняем в БД
-  try {
-    await pool.query(
-      'INSERT INTO messages (nickname, text) VALUES ($1, $2)',
-      [socket.nickname, text]
-    );
-    console.log('✅ Сообщение сохранено в БД');
-  } catch (err) {
-    console.error('❌ Ошибка сохранения сообщения:', err);
-  }
-  
-  messages.push(message);
-  if (messages.length > 100) {
-    messages.shift();
-  }
-  
-  io.emit('message', message);
-});
+  if (to === 'general') {
+    // Общее сообщение
+    try {
+      await pool.query(
+        'INSERT INTO messages (nickname, text) VALUES ($1, $2)',
+        [socket.nickname, text]
+      );
+      console.log('✅ Сообщение сохранено в БД');
+    } catch (err) {
+      console.error('❌ Ошибка сохранения сообщения:', err);
+    }
     
     messages.push(message);
-    
-    io.emit('message', message);
-  });
-
-  // Отключение пользователя
-  socket.on('disconnect', () => {
-    if (socket.nickname) {
-      console.log(`${socket.nickname} отключился`);
-      
-      // Удаляем пользователя
-      users.delete(socket.id);
-      
-      // Сообщаем всем об отключении
-      io.emit('system_message', `${socket.nickname} покинул чат`);
-      
-      // Обновляем список пользователей
-      broadcastUsersList();
+    if (messages.length > 100) {
+      messages.shift();
     }
-  });
+    
+    io.emit('message', { ...message, to: 'general' });
+  } else {
+    // Приватное сообщение
+    const key = `${socket.nickname}_${to}`;
+    const reverseKey = `${to}_${socket.nickname}`;
+    
+    if (!privateMessages.has(key)) {
+      privateMessages.set(key, []);
+    }
+    
+    privateMessages.get(key).push(message);
+    
+    // Отправляем сообщение обоим участникам
+    io.to(socket.id).emit('message', { ...message, to, from: socket.nickname });
+    
+    // Находим сокет получателя
+    const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+      user.nickname === to
+    );
+    
+    if (recipientSocket) {
+      const [recipientId] = recipientSocket;
+      io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
+    }
+  }
+});
+
+// Загрузка истории чата
+socket.on('get_history', async (chatName) => {
+  if (chatName === 'general') {
+    // Загружаем историю из БД
+    try {
+      const result = await pool.query(
+        'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
+      );
+      
+      const dbMessages = result.rows.map(row => ({
+        nickname: row.nickname,
+        text: row.text,
+        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      })).reverse();
+      
+      socket.emit('history', dbMessages);
+    } catch (err) {
+      console.error('❌ Ошибка загрузки истории:', err);
+      socket.emit('history', messages);
+    }
+  } else {
+    // Загружаем приватные сообщения
+    const key1 = `${socket.nickname}_${chatName}`;
+    const key2 = `${chatName}_${socket.nickname}`;
+    
+    let chatMessages = [];
+    
+    if (privateMessages.has(key1)) {
+      chatMessages = [...privateMessages.get(key1)];
+    }
+    if (privateMessages.has(key2)) {
+      chatMessages = [...chatMessages, ...privateMessages.get(key2)];
+    }
+    
+    chatMessages.sort((a, b) => 
+      new Date('1970-01-01 ' + a.time) - new Date('1970-01-01 ' + b.time)
+    );
+    
+    socket.emit('history', chatMessages.slice(-100));
+  }
+});
+
+// Отключение пользователя
+socket.on('disconnect', () => {
+  if (socket.nickname) {
+    console.log(`${socket.nickname} отключился`);
+    
+    // Удаляем пользователя
+    users.delete(socket.id);
+    
+    // Сообщаем всем об отключении
+    io.emit('system_message', `${socket.nickname} покинул чат`);
+    
+    // Обновляем список пользователей
+    broadcastUsersList();
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
