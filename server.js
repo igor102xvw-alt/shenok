@@ -10,6 +10,26 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 
+// Подключение к базе данных
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Проверка подключения к БД
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Ошибка подключения к базе данных:', err);
+  } else {
+    console.log('✅ Подключено к базе данных PostgreSQL');
+    release();
+  }
+});
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -115,4 +135,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
