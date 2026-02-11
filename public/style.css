@@ -26,6 +26,8 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  margin: 0 auto; /* ← ДОБАВИЛИ ЦЕНТРИРОВАНИЕ */
+  overflow: hidden; /* ← ДОБАВИЛИ ЧТОБЫ НЕ РАСТЯГИВАЛСЯ */
 }
 
 /* Экран чата — занимает ВЕСЬ экран */
@@ -298,7 +300,6 @@ body {
   background: #44cc00;
 }
 
-/* Login Screen стили */
 .login-container {
   padding: 40px;
   text-align: center;
@@ -306,6 +307,8 @@ body {
   flex-direction: column;
   justify-content: center;
   height: 100%;
+  max-width: 400px; /* ← ДОБАВИЛИ ОГРАНИЧЕНИЕ ШИРИНЫ */
+  margin: 0 auto; /* ← ЦЕНТРИРОВАНИЕ */
 }
 
 .login-container h1 {
@@ -385,3 +388,4 @@ body {
     height: calc(100% - 110px);
   }
 }
+
