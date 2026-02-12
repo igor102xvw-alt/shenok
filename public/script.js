@@ -304,13 +304,27 @@ function updateTypingDisplay() {
   const typingIndicator = document.getElementById('typing-indicator');
   if (!typingIndicator) return;
   
-  if (typingUsers.size > 0) {
+  // Показываем только в текущем активном чате
+  if (typingUsers.size > 0 && currentChat === 'general') {
     const users = Array.from(typingUsers.keys()).join(', ');
     typingIndicator.textContent = `${users} печатает...`;
     typingIndicator.classList.remove('hidden');
   } else {
     typingIndicator.classList.add('hidden');
   }
+  
+  // Обновляем индикаторы в сообщениях
+  document.querySelectorAll('.message').forEach(msgDiv => {
+    const nickname = msgDiv.querySelector('.message-nickname')?.textContent;
+    const indicator = msgDiv.querySelector('.typing-indicator');
+    
+    if (indicator && nickname && typingUsers.has(nickname)) {
+      indicator.textContent = `${nickname} печатает...`;
+      indicator.classList.remove('hidden');
+    } else if (indicator) {
+      indicator.classList.add('hidden');
+    }
+  });
 }
 
 // Enter для отправки
@@ -347,3 +361,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
