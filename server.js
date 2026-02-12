@@ -241,62 +241,78 @@ io.on('connection', (socket) => {
   });
 
   // Получение сообщения
-  socket.on('message', async (data) => {
-    if (!socket.nickname) return;
+socket.on('message', async (data) => {
+  if (!socket.nickname || !socket.userId) return;
+  
+  const text = data.text;
+  const to = data.to || 'general'; // 'general' или логин получателя
+  
+  const now = new Date();
+  const message = {
+    nickname: socket.nickname,
+    text: text,
+    time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+  
+  if (to === 'general') {
+    // Общее сообщение
+    try {
+      await pool.query(
+        'INSERT INTO messages (user_id, text) VALUES ($1, $2)',
+        [socket.userId, text]
+      );
+      console.log('✅ Общее сообщение сохранено в БД');
+    } catch (err) {
+      console.error('❌ Ошибка сохранения общего сообщения:', err);
+    }
     
-    const text = data.text;
-    const to = data.to || 'general'; // 'general' или ник получателя
+    messages.push(message);
+    if (messages.length > 100) {
+      messages.shift();
+    }
     
-    const now = new Date();
-    const message = {
-      nickname: socket.nickname,
-      text: text,
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    if (to === 'general') {
-      // Общее сообщение
-      try {
-        await pool.query(
-          'INSERT INTO messages (nickname, text) VALUES ($1, $2)',
-          [socket.nickname, text]
-        );
-        console.log('✅ Сообщение сохранено в БД');
-      } catch (err) {
-        console.error('❌ Ошибка сохранения сообщения:', err);
-      }
-      
-      messages.push(message);
-      if (messages.length > 100) {
-        messages.shift();
-      }
-      
-      io.emit('message', { ...message, to: 'general' });
-    } else {
-      // Приватное сообщение
-      const key = `${socket.nickname}_${to}`;
-      const reverseKey = `${to}_${socket.nickname}`;
-      
-      if (!privateMessages.has(key)) {
-        privateMessages.set(key, []);
-      }
-      
-      privateMessages.get(key).push(message);
-      
-      // Отправляем сообщение обоим участникам
-      io.to(socket.id).emit('message', { ...message, to, from: socket.nickname });
-      
-      // Находим сокет получателя
-      const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
-        user.nickname === to
+    io.emit('message', { ...message, to: 'general' });
+  } else {
+    // Приватное сообщение
+    try {
+      // Находим получателя по логину
+      const recipientResult = await pool.query(
+        'SELECT id FROM users WHERE login = $1',
+        [to]
       );
       
-      if (recipientSocket) {
-        const [recipientId] = recipientSocket;
-        io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
+      if (recipientResult.rows.length === 0) {
+        console.error('❌ Получатель не найден:', to);
+        return;
       }
+      
+      const recipientId = recipientResult.rows[0].id;
+      
+      // Сохраняем в БД
+      await pool.query(
+        'INSERT INTO private_messages (sender_id, recipient_id, text) VALUES ($1, $2, $3)',
+        [socket.userId, recipientId, text]
+      );
+      
+      console.log(`✅ Приватное сообщение сохранено: ${socket.nickname} → ${to}`);
+    } catch (err) {
+      console.error('❌ Ошибка сохранения приватного сообщения:', err);
     }
-  });
+    
+    // Отправляем сообщение обоим участникам
+    io.to(socket.id).emit('message', { ...message, to, from: socket.nickname });
+    
+    // Находим сокет получателя
+    const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+      user.nickname === to
+    );
+    
+    if (recipientSocket) {
+      const [recipientId] = recipientSocket;
+      io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
+    }
+  }
+});
 
   // Загрузка истории чата
   socket.on('get_history', async (chatName) => {
@@ -361,6 +377,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
