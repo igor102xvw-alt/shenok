@@ -6,7 +6,7 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #000;
+  background: #0a0a0a; /* Было #000 */
   color: #66ff00;
   height: 100vh;
   width: 100vw;
@@ -56,8 +56,8 @@ body {
 .sidebar {
   width: 280px;
   min-width: 280px;
-  background: #0a0a0a;
-  border-right: 1px solid #333;
+  background: #111; /* Было #0a0a0a */
+  border-right: 1px solid #222;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -66,8 +66,8 @@ body {
 
 .sidebar-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #333;
-  background: #111;
+  border-bottom: 1px solid #222;
+  background: #151515;
 }
 
 .sidebar-header h2 {
@@ -144,15 +144,15 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #0a0a0a;
+  background: #0d0d0d; /* Было #0a0a0a */
   overflow: hidden;
   height: 100%;
 }
 
 .chat-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #333;
-  background: #111;
+  border-bottom: 1px solid #222;
+  background: linear-gradient(135deg, #151515 0%, #111 100%);
   display: flex;
   align-items: center;
 }
@@ -181,11 +181,11 @@ body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background: #0a0a0a;
+  background: #0d0d0d;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100% - 110px); /* Высота минус хедер и инпут */
+  height: calc(100% - 110px);
 }
 
 .message {
@@ -197,14 +197,14 @@ body {
 }
 
 .message.own {
-  background: #2a2a2a;
+  background: #1e1e1e; /* Было #2a2a2a */
   color: #fff;
   margin-left: auto;
   border-radius: 15px 15px 0 15px;
 }
 
 .message.other {
-  background: #1a1a1a;
+  background: #161616; /* Было #1a1a1a */
   color: #fff;
   margin-right: auto;
   border-radius: 15px 15px 15px 0;
@@ -253,8 +253,8 @@ body {
 
 .input-area {
   padding: 15px;
-  background: #111;
-  border-top: 1px solid #333;
+  background: linear-gradient(135deg, #111 0%, #0d0d0d 100%);
+  border-top: 1px solid #222;
   display: flex;
   gap: 10px;
   height: 70px;
@@ -263,22 +263,23 @@ body {
 .input-area input {
   flex: 1;
   padding: 12px 20px;
-  border: 2px solid #66ff00;
+  border: 2px solid #333;
   border-radius: 25px;
-  background: #0a0a0a;
+  background: #111;
   color: #fff;
   font-size: 16px;
   outline: none;
+  transition: all 0.3s;
 }
 
 .input-area input:focus {
   border-color: #66ff00;
-  box-shadow: 0 0 10px rgba(102, 255, 0, 0.2);
+  box-shadow: 0 0 15px rgba(102, 255, 0, 0.3);
 }
 
 .input-area button {
   padding: 12px 25px;
-  background: #0a0a0a;
+  background: #151515;
   color: #66ff00;
   border: 2px solid #66ff00;
   border-radius: 25px;
@@ -292,7 +293,7 @@ body {
 .input-area button:hover {
   background: #66ff00;
   color: #000;
-  box-shadow: 0 0 15px rgba(102, 255, 0, 0.4);
+  box-shadow: 0 0 20px rgba(102, 255, 0, 0.5);
 }
 
 /* Скроллбар */
@@ -313,6 +314,7 @@ body {
   background: #44cc00;
 }
 
+/* Стили для экрана входа */
 .login-container {
   padding: 40px;
   text-align: center;
@@ -320,8 +322,11 @@ body {
   flex-direction: column;
   justify-content: center;
   height: 100%;
-  max-width: 400px; /* ← ДОБАВИЛИ ОГРАНИЧЕНИЕ ШИРИНЫ */
-  margin: 0 auto; /* ← ЦЕНТРИРОВАНИЕ */
+  max-width: 400px;
+  margin: 0 auto;
+  background: #111;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(102, 255, 0, 0.2);
 }
 
 .login-container h1 {
@@ -334,9 +339,9 @@ body {
   width: 100%;
   padding: 12px;
   margin: 10px 0;
-  border: 2px solid #66ff00;
+  border: 2px solid #333;
   border-radius: 8px;
-  background: #0a0a0a;
+  background: #151515;
   color: #fff;
   font-size: 16px;
   transition: all 0.3s;
@@ -351,7 +356,7 @@ body {
 .login-container button {
   width: 100%;
   padding: 12px;
-  background: #0a0a0a;
+  background: #151515;
   color: #66ff00;
   border: 2px solid #66ff00;
   border-radius: 8px;
@@ -407,12 +412,13 @@ body {
   padding: 10px;
 }
 
+/* Элементы списка чатов */
 .chat-item {
   display: flex;
   align-items: center;
   padding: 12px 15px;
   margin-bottom: 5px;
-  background: #111;
+  background: #151515;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
@@ -427,10 +433,11 @@ body {
 .chat-item.active {
   background: #1a1a1a;
   border-color: #66ff00;
+  box-shadow: 0 0 10px rgba(102, 255, 0, 0.3);
 }
 
 .chat-item.general {
-  background: #0a0a0a;
+  background: #151515;
   border: 1px solid #66ff00;
   margin-bottom: 15px;
 }
@@ -517,9 +524,3 @@ body {
     height: calc(100% - 110px);
   }
 }
-
-
-
-
-
-
