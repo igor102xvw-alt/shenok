@@ -7,16 +7,37 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Экран входа -->
-  <div id="login-screen" class="screen">
-    <div class="login-container">
-      <h1>puppy</h1>
-      <input type="password" id="password" placeholder="Пароль" autocomplete="off">
-      <input type="text" id="nickname" placeholder="Ник">
+ <!-- Экран входа -->
+<div id="login-screen" class="screen">
+  <div class="login-container">
+    <h1>puppy</h1>
+    
+    <!-- Форма входа -->
+    <div id="login-form">
+      <h2>🔐 Вход</h2>
+      <input type="text" id="login" placeholder="Логин" autocomplete="username">
+      <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
       <button onclick="login()">Войти</button>
       <p id="error" class="error"></p>
+      <p class="switch-form">
+        Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Регистрация</a>
+      </p>
+    </div>
+    
+    <!-- Форма регистрации -->
+    <div id="register-form" class="hidden">
+      <h2>✨ Регистрация</h2>
+      <input type="text" id="register-login" placeholder="Логин" autocomplete="username">
+      <input type="password" id="register-password" placeholder="Пароль" autocomplete="new-password">
+      <input type="password" id="register-password-confirm" placeholder="Подтвердите пароль" autocomplete="new-password">
+      <button onclick="register()">Зарегистрироваться</button>
+      <p id="register-error" class="error"></p>
+      <p class="switch-form">
+        Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Вход</a>
+      </p>
     </div>
   </div>
+</div>
 
   <!-- Основной интерфейс -->
   <div id="chat-screen" class="screen hidden">
@@ -52,6 +73,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
