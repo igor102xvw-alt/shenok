@@ -465,6 +465,23 @@ body {
   font-weight: bold;
 }
 
+/* Переключение между формами */
+.switch-form {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.switch-form a {
+  color: #66ff00;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.switch-form a:hover {
+  text-decoration: underline;
+}
+
 /* Адаптивность для мобильных */
 @media (max-width: 768px) {
   .app-container {
@@ -487,6 +504,7 @@ body {
     height: calc(100% - 110px);
   }
 }
+
 
 
 
