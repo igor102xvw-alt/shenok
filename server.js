@@ -87,29 +87,29 @@ async function createTables() {
 createTables();
 
 // Отправка списка пользователей всем клиентам
-function broadcastUsersList() {
-  const usersList = Array.from(users.values()).map(user => ({
-    nickname: user.nickname,
-    online: user.online
-  }));
-  
-  io.emit('users_update', usersList);
-}
-
-// Обработка подключений
-io.on('connection', (socket) => {
-  console.log('Новый пользователь подключился:', socket.id);
-
-  // Статус печати
-  socket.on('typing', (data) => {
-    if (!socket.nickname) return;
+async function broadcastUsersList() {
+  try {
+    // Загружаем всех пользователей из БД
+    const allUsersResult = await pool.query(`
+      SELECT id, login, created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
     
-    // Отправляем статус всем, кроме отправителя
-    socket.broadcast.emit('user_typing', {
-      nickname: socket.nickname,
-      isTyping: data.isTyping
-    });
-  });
+    // Получаем список онлайн-пользователей
+    const onlineUsers = Array.from(users.values()).map(user => user.nickname);
+    
+    // Формируем список всех пользователей с их статусом
+    const usersList = allUsersResult.rows.map(row => ({
+      nickname: row.login,
+      online: onlineUsers.includes(row.login)
+    }));
+    
+    io.emit('users_update', usersList);
+  } catch (err) {
+    console.error('❌ Ошибка загрузки списка пользователей:', err);
+  }
+}
 
   // Регистрация нового пользователя
   socket.on('register', async (data) => {
@@ -403,6 +403,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
