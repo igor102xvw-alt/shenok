@@ -99,6 +99,9 @@ socket.on('login_error', (msg) => {
 // Текущий активный чат
 let currentChat = 'general'; // 'general' или логин пользователя
 
+// Храним статус печати для каждого пользователя
+const typingUsers = new Map();
+
 socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
   chatsList.innerHTML = '';
@@ -178,29 +181,15 @@ function switchChat(chatName) {
       headerAvatar.textContent = firstLetter;
       headerAvatar.style.background = '#66ff00';
     }
-  };
-  
-  // Очищаем сообщения и загружаем нужные
-  const messagesDiv = document.getElementById('messages');
-  messagesDiv.innerHTML = '';
-  
-  // Запрашиваем историю для текущего чата
-  socket.emit('get_history', chatName);
-}
-  
-  // Меняем заголовок чата
-  const chatHeader = document.querySelector('.chat-header h2');
-  if (chatHeader) {
-    if (chatName === 'general') {
-      chatHeader.textContent = '💬 Общий чат';
-    } else {
-      chatHeader.textContent = `💬 ${chatName}`;
-    }
   }
   
   // Очищаем сообщения и загружаем нужные
   const messagesDiv = document.getElementById('messages');
   messagesDiv.innerHTML = '';
+  
+  // Очищаем статус печати
+  typingUsers.clear();
+  updateTypingDisplay();
   
   // Запрашиваем историю для текущего чата
   socket.emit('get_history', chatName);
@@ -300,15 +289,29 @@ document.getElementById('message')?.addEventListener('input', () => {
 
 // Получение статуса от других пользователей
 socket.on('user_typing', (data) => {
-  const typingIndicator = document.getElementById('typing-indicator');
+  if (!data.nickname || data.nickname === myLogin) return;
   
   if (data.isTyping) {
-    typingIndicator.textContent = `${data.nickname} печатает...`;
+    typingUsers.set(data.nickname, true);
+  } else {
+    typingUsers.delete(data.nickname);
+  }
+  
+  updateTypingDisplay();
+});
+
+function updateTypingDisplay() {
+  const typingIndicator = document.getElementById('typing-indicator');
+  if (!typingIndicator) return;
+  
+  if (typingUsers.size > 0) {
+    const users = Array.from(typingUsers.keys()).join(', ');
+    typingIndicator.textContent = `${users} печатает...`;
     typingIndicator.classList.remove('hidden');
   } else {
     typingIndicator.classList.add('hidden');
   }
-});
+}
 
 // Enter для отправки
 document.getElementById('message')?.addEventListener('keypress', (e) => {
@@ -344,6 +347,3 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
-
-
