@@ -178,7 +178,7 @@ function switchChat(chatName) {
       headerAvatar.textContent = firstLetter;
       headerAvatar.style.background = '#66ff00';
     }
-  }
+  };
   
   // Очищаем сообщения и загружаем нужные
   const messagesDiv = document.getElementById('messages');
@@ -344,5 +344,6 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
 
 
