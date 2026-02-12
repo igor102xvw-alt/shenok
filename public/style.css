@@ -154,14 +154,27 @@ body {
   border-bottom: 1px solid #333;
   background: #111;
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
-.chat-header h2 {
-  color: #66ff00;
+.chat-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-header-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #66ff00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #000;
+  flex-shrink: 0;
   font-size: 18px;
-  font-weight: 600;
 }
 
 .messages-container {
@@ -504,6 +517,7 @@ body {
     height: calc(100% - 110px);
   }
 }
+
 
 
 
