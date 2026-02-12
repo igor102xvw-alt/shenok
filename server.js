@@ -50,21 +50,31 @@ const privateMessages = new Map(); // ключ: "от_кому", значени�
 // Создание таблиц при запуске
 async function createTables() {
   try {
+    // Таблица пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        login VARCHAR(50) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Таблица сообщений (обновлённая)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
-        nickname VARCHAR(50) NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Таблица messages создана');
+    
+    console.log('✅ Таблицы users и messages созданы');
   } catch (err) {
-    console.error('❌ Ошибка создания таблицы:', err);
+    console.error('❌ Ошибка создания таблиц:', err);
   }
 }
-
-createTables();
 
 // Отправка списка пользователей всем клиентам
 function broadcastUsersList() {
@@ -259,6 +269,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
