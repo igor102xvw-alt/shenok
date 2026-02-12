@@ -145,13 +145,34 @@ socket.on('users_update', (users) => {
 function switchChat(chatName) {
   currentChat = chatName;
   
-  // Обновляем выделение
+  // Убираем подсветку со всех чатов
   document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active');
-    if (item.dataset.chat === chatName) {
-      item.classList.add('active');
-    }
   });
+  
+  // Добавляем подсветку только текущему чату
+  const activeChat = document.querySelector(`.chat-item[data-chat="${chatName}"]`);
+  if (activeChat) {
+    activeChat.classList.add('active');
+  }
+  
+  // Меняем заголовок чата
+  const chatHeader = document.querySelector('.chat-header h2');
+  if (chatHeader) {
+    if (chatName === 'general') {
+      chatHeader.textContent = '💬 Общий чат';
+    } else {
+      chatHeader.textContent = `💬 ${chatName}`;
+    }
+  }
+  
+  // Очищаем сообщения и загружаем нужные
+  const messagesDiv = document.getElementById('messages');
+  messagesDiv.innerHTML = '';
+  
+  // Запрашиваем историю для текущего чата
+  socket.emit('get_history', chatName);
+}
   
   // Меняем заголовок чата
   const chatHeader = document.querySelector('.chat-header h2');
@@ -309,3 +330,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
