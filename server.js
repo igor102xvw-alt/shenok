@@ -229,24 +229,6 @@ socket.on('login', async (data) => {
     socket.emit('login_error', 'Ошибка сервера. Попробуйте позже.');
   }
 });
-  
-    // Загружаем историю из БД
-    try {
-      const result = await pool.query(
-        'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
-      );
-      
-      const dbMessages = result.rows.map(row => ({
-        nickname: row.nickname,
-        text: row.text,
-        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      })).reverse();
-      
-      socket.emit('history', dbMessages);
-    } catch (err) {
-      console.error('❌ Ошибка загрузки истории:', err);
-      socket.emit('history', messages);
-    }
     
     // Сообщаем всем о новом пользователе
     io.emit('system_message', `${socket.nickname} присоединился к чату`);
@@ -382,6 +364,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
