@@ -1,22 +1,37 @@
 const socket = io();
-let myNickname = '';
+let myLogin = ''; // Теперь храним логин вместо ника
 
-// ==================== ЭКРАН ВХОДА ====================
+// ==================== ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
 
-function login() {
-  const password = document.getElementById('password').value;
-  const nickname = document.getElementById('nickname').value || 'Я';
+function showLoginForm() {
+  document.getElementById('login-form').classList.remove('hidden');
+  document.getElementById('register-form').classList.add('hidden');
+  document.getElementById('login').focus();
+}
+
+function showRegisterForm() {
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('register-form').classList.remove('hidden');
+  document.getElementById('register-login').focus();
+}
+
+// ==================== РЕГИСТРАЦИЯ ====================
+
+function register() {
+  const login = document.getElementById('register-login').value.trim();
+  const password = document.getElementById('register-password').value;
+  const passwordConfirm = document.getElementById('register-password-confirm').value;
   
-  if (!password) {
-    showError('Введите пароль!');
+  if (!login || !password || !passwordConfirm) {
+    showRegisterError('Заполните все поля!');
     return;
   }
   
-  socket.emit('login', { password, nickname });
+  socket.emit('register', { login, password, passwordConfirm });
 }
 
-socket.on('login_success', () => {
-  myNickname = document.getElementById('nickname').value || 'Я';
+socket.on('register_success', () => {
+  myLogin = document.getElementById('register-login').value.trim();
   
   // Удаляем экран входа
   document.getElementById('login-screen').remove();
@@ -26,6 +41,53 @@ socket.on('login_success', () => {
   
   // Фокус на поле ввода
   document.getElementById('message').focus();
+  
+  // Очищаем ошибки
+  document.getElementById('register-error').textContent = '';
+});
+
+socket.on('register_error', (msg) => {
+  showRegisterError(msg);
+});
+
+function showRegisterError(msg) {
+  const errorEl = document.getElementById('register-error');
+  if (errorEl) {
+    errorEl.textContent = msg;
+    setTimeout(() => {
+      if (errorEl) errorEl.textContent = '';
+    }, 5000);
+  }
+}
+
+// ==================== ВХОД ====================
+
+function login() {
+  const login = document.getElementById('login').value.trim();
+  const password = document.getElementById('password').value;
+  
+  if (!login || !password) {
+    showError('Заполните все поля!');
+    return;
+  }
+  
+  socket.emit('login', { login, password });
+}
+
+socket.on('login_success', () => {
+  myLogin = document.getElementById('login').value.trim();
+  
+  // Удаляем экран входа
+  document.getElementById('login-screen').remove();
+  
+  // Показываем чат
+  document.getElementById('chat-screen').classList.remove('hidden');
+  
+  // Фокус на поле ввода
+  document.getElementById('message').focus();
+  
+  // Очищаем ошибки
+  document.getElementById('error').textContent = '';
 });
 
 socket.on('login_error', (msg) => {
@@ -35,7 +97,7 @@ socket.on('login_error', (msg) => {
 // ==================== СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
 
 // Текущий активный чат
-let currentChat = 'general'; // 'general' или ник пользователя
+let currentChat = 'general'; // 'general' или логин пользователя
 
 socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
@@ -57,13 +119,13 @@ socket.on('users_update', (users) => {
   
   // Добавляем пользователей как приватные чаты
   users.forEach(user => {
-    if (user.nickname === myNickname) return; // Не показываем себя
+    if (user.nickname === myLogin) return; // Не показываем себя
     
     const chatDiv = document.createElement('div');
     chatDiv.className = `chat-item ${currentChat === user.nickname ? 'active' : ''}`;
     chatDiv.dataset.chat = user.nickname;
     
-    // Первая буква ника как аватарка
+    // Первая буква логина как аватарка
     const firstLetter = user.nickname.charAt(0).toUpperCase();
     
     chatDiv.innerHTML = `
@@ -79,6 +141,7 @@ socket.on('users_update', (users) => {
   });
 });
 
+// Переключение между чатами
 function switchChat(chatName) {
   currentChat = chatName;
   
@@ -92,7 +155,7 @@ function switchChat(chatName) {
   
   // Меняем заголовок чата
   const chatHeader = document.querySelector('.chat-header h2');
-  if (chatHeader) { // ← ДОБАВЬ ПРОВЕРКУ!
+  if (chatHeader) {
     if (chatName === 'general') {
       chatHeader.textContent = '💬 Общий чат';
     } else {
@@ -104,6 +167,7 @@ function switchChat(chatName) {
   const messagesDiv = document.getElementById('messages');
   messagesDiv.innerHTML = '';
   
+  // Запрашиваем историю для текущего чата
   socket.emit('get_history', chatName);
 }
 
@@ -142,7 +206,7 @@ function addMessage(msg) {
   const msgDiv = document.createElement('div');
   
   // Определяем, чьё сообщение
-  const isOwn = msg.nickname === myNickname;
+  const isOwn = msg.nickname === myLogin;
   msgDiv.className = `message ${isOwn ? 'own' : 'other'}`;
   
   const now = new Date();
@@ -220,6 +284,10 @@ document.getElementById('password')?.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') login();
 });
 
+document.getElementById('register-password-confirm')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') register();
+});
+
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
 function showError(msg) {
@@ -228,7 +296,7 @@ function showError(msg) {
     errorEl.textContent = msg;
     setTimeout(() => {
       if (errorEl) errorEl.textContent = '';
-    }, 3000);
+    }, 5000);
   }
 }
 
@@ -241,7 +309,3 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
-
-
-
