@@ -166,6 +166,20 @@ function switchChat(chatName) {
     }
   }
   
+  // Обновляем аватарку в заголовке
+  const headerAvatar = document.querySelector('.chat-header-avatar');
+  if (headerAvatar) {
+    if (chatName === 'general') {
+      headerAvatar.textContent = '👥';
+      headerAvatar.style.background = '#66ff00';
+    } else {
+      // Первая буква логина
+      const firstLetter = chatName.charAt(0).toUpperCase();
+      headerAvatar.textContent = firstLetter;
+      headerAvatar.style.background = '#66ff00';
+    }
+  }
+  
   // Очищаем сообщения и загружаем нужные
   const messagesDiv = document.getElementById('messages');
   messagesDiv.innerHTML = '';
@@ -330,4 +344,5 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
 
