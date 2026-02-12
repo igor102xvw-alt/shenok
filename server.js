@@ -44,9 +44,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const users = new Map();
 const messages = [];
 
-// Храним приватные сообщения
-const privateMessages = new Map(); // ключ: "от_кому", значение: массив сообщений
-
 // Создание таблиц при запуске
 async function createTables() {
   try {
@@ -315,46 +312,75 @@ socket.on('message', async (data) => {
 });
 
   // Загрузка истории чата
-  socket.on('get_history', async (chatName) => {
-    if (chatName === 'general') {
-      // Загружаем историю из БД
-      try {
-        const result = await pool.query(
-          'SELECT nickname, text, created_at FROM messages ORDER BY created_at DESC LIMIT 100'
-        );
-        
-        const dbMessages = result.rows.map(row => ({
-          nickname: row.nickname,
-          text: row.text,
-          time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        })).reverse();
-        
-        socket.emit('history', dbMessages);
-      } catch (err) {
-        console.error('❌ Ошибка загрузки истории:', err);
-        socket.emit('history', messages);
-      }
-    } else {
-      // Загружаем приватные сообщения
-      const key1 = `${socket.nickname}_${chatName}`;
-      const key2 = `${chatName}_${socket.nickname}`;
+socket.on('get_history', async (chatName) => {
+  if (!socket.userId) return;
+  
+  if (chatName === 'general') {
+    // Загружаем историю общих сообщений из БД
+    try {
+      const result = await pool.query(`
+        SELECT u.login as nickname, m.text, m.created_at
+        FROM messages m
+        JOIN users u ON u.id = m.user_id
+        ORDER BY m.created_at DESC
+        LIMIT 100
+      `);
       
-      let chatMessages = [];
+      const dbMessages = result.rows.map(row => ({
+        nickname: row.nickname,
+        text: row.text,
+        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      })).reverse();
       
-      if (privateMessages.has(key1)) {
-        chatMessages = [...privateMessages.get(key1)];
-      }
-      if (privateMessages.has(key2)) {
-        chatMessages = [...chatMessages, ...privateMessages.get(key2)];
-      }
-      
-      chatMessages.sort((a, b) => 
-        new Date('1970-01-01 ' + a.time) - new Date('1970-01-01 ' + b.time)
+      socket.emit('history', dbMessages);
+    } catch (err) {
+      console.error('❌ Ошибка загрузки истории общего чата:', err);
+      socket.emit('history', messages);
+    }
+  } else {
+    // Загружаем историю приватных сообщений из БД
+    try {
+      // Находим получателя по логину
+      const recipientResult = await pool.query(
+        'SELECT id FROM users WHERE login = $1',
+        [chatName]
       );
       
-      socket.emit('history', chatMessages.slice(-100));
+      if (recipientResult.rows.length === 0) {
+        console.error('❌ Получатель не найден:', chatName);
+        socket.emit('history', []);
+        return;
+      }
+      
+      const recipientId = recipientResult.rows[0].id;
+      
+      // Загружаем сообщения между двумя пользователями
+      const result = await pool.query(`
+        SELECT 
+          u.login as sender_login,
+          pm.text,
+          pm.created_at
+        FROM private_messages pm
+        JOIN users u ON u.id = pm.sender_id
+        WHERE (pm.sender_id = $1 AND pm.recipient_id = $2)
+           OR (pm.sender_id = $2 AND pm.recipient_id = $1)
+        ORDER BY pm.created_at ASC
+        LIMIT 100
+      `, [socket.userId, recipientId]);
+      
+      const dbMessages = result.rows.map(row => ({
+        nickname: row.sender_login,
+        text: row.text,
+        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }));
+      
+      socket.emit('history', dbMessages);
+    } catch (err) {
+      console.error('❌ Ошибка загрузки истории приватного чата:', err);
+      socket.emit('history', []);
     }
-  });
+  }
+});
 
   // Отключение пользователя
   socket.on('disconnect', () => {
@@ -377,6 +403,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
