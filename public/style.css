@@ -384,18 +384,27 @@ body {
   display: none !important;
 }
 
-/* Индикатор печати */
-.typing-indicator {
-  padding: 10px 20px;
+/* Индикатор "печатает..." */
+#typing-indicator {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  background: rgba(102, 255, 0, 0.1);
   color: #66ff00;
+  padding: 5px 10px;
+  border-radius: 15px;
   font-size: 13px;
-  font-style: italic;
-  text-align: center;
-  height: 20px;
-  transition: opacity 0.3s;
-  margin-top: 10px; /* ← ДОБАВИЛИ ОТСТУП СВЕРХУ */
-  background: rgba(10, 10, 10, 0.7); /* ← ДОБАВИЛИ ФОН */
-  border-radius: 8px; /* ← ДОБАВИЛИ СКРУГЛЕНИЕ */
+  animation: pulse 2s infinite;
+  z-index: 100;
+}
+
+#typing-indicator.hidden {
+  display: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .typing-indicator.hidden {
@@ -524,3 +533,4 @@ body {
     height: calc(100% - 110px);
   }
 }
+
