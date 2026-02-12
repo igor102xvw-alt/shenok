@@ -240,7 +240,7 @@ socket.on('login', async (data) => {
     broadcastUsersList();
     
     console.log(`✅ Пользователь ${user.login} вошёл в систему`);
-  } catch (err) {
+    catch (err) {
     console.error('❌ Ошибка входа:', err);
     socket.emit('login_error', 'Ошибка сервера. Попробуйте позже.');
   }
@@ -380,6 +380,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
