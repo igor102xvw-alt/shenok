@@ -230,6 +230,22 @@ socket.on('login', async (data) => {
   }
 });
     
+    // Отправляем успех
+    socket.emit('login_success');
+    
+    // Сообщаем всем о входе пользователя
+    io.emit('system_message', `${user.login} вошёл в чат`);
+    
+    // Обновляем список пользователей
+    broadcastUsersList();
+    
+    console.log(`✅ Пользователь ${user.login} вошёл в систему`);
+  } catch (err) {
+    console.error('❌ Ошибка входа:', err);
+    socket.emit('login_error', 'Ошибка сервера. Попробуйте позже.');
+  }
+});
+    
     // Сообщаем всем о новом пользователе
     io.emit('system_message', `${socket.nickname} присоединился к чату`);
     
@@ -364,6 +380,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
