@@ -60,7 +60,7 @@ async function createTables() {
       )
     `);
     
-    // Таблица сообщений (обновлённая)
+    // Таблица общих сообщений
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
@@ -70,7 +70,18 @@ async function createTables() {
       )
     `);
     
-    console.log('✅ Таблицы users и messages созданы');
+    // Таблица приватных сообщений
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS private_messages (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        recipient_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('✅ Таблицы users, messages и private_messages созданы');
   } catch (err) {
     console.error('❌ Ошибка создания таблиц:', err);
   }
@@ -350,6 +361,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
 
