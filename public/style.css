@@ -384,18 +384,17 @@ body {
   display: none !important;
 }
 
-/* Индикатор "печатает..." */
-#typing-indicator {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  background: rgba(102, 255, 0, 0.1);
-  color: #66ff00;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 13px;
-  animation: pulse 2s infinite;
-  z-index: 100;
+/* Индикатор "печатает..." под ником */
+.message .typing-indicator {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  display: none;
+}
+
+.message .typing-indicator:not(.hidden) {
+  display: block;
 }
 
 #typing-indicator.hidden {
@@ -533,4 +532,5 @@ body {
     height: calc(100% - 110px);
   }
 }
+
 
