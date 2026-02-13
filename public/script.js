@@ -96,12 +96,6 @@ socket.on('login_error', (msg) => {
 
 // ==================== СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
 
-// Текущий активный чат
-let currentChat = 'general'; // 'general' или логин пользователя
-
-// Храним статус печати для каждого пользователя
-const typingUsers = new Map();
-
 socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
   chatsList.innerHTML = '';
@@ -146,17 +140,26 @@ socket.on('users_update', (users) => {
 
 // Переключение между чатами
 function switchChat(chatName) {
+  console.log('switchChat вызван:', chatName);
+  
   currentChat = chatName;
   
   // Убираем подсветку со всех чатов
-  document.querySelectorAll('.chat-item').forEach(item => {
+  const allChats = document.querySelectorAll('.chat-item');
+  console.log('Всего чатов:', allChats.length);
+  
+  allChats.forEach(item => {
     item.classList.remove('active');
+    console.log('Убран класс active с:', item.dataset.chat);
   });
   
   // Добавляем подсветку только текущему чату
   const activeChat = document.querySelector(`.chat-item[data-chat="${chatName}"]`);
   if (activeChat) {
     activeChat.classList.add('active');
+    console.log('Добавлен класс active к:', chatName);
+  } else {
+    console.log('Чат не найден:', chatName);
   }
   
   // Меняем заголовок чата
@@ -354,3 +357,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
