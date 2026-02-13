@@ -1,5 +1,7 @@
 const socket = io();
 let myLogin = ''; // Теперь храним логин вместо ника
+let currentChat = 'general'; // 'general' или логин пользователя
+const typingUsers = new Map();
 
 // ==================== ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
 
@@ -32,17 +34,9 @@ function register() {
 
 socket.on('register_success', () => {
   myLogin = document.getElementById('register-login').value.trim();
-  
-  // Удаляем экран входа
   document.getElementById('login-screen').remove();
-  
-  // Показываем чат
   document.getElementById('chat-screen').classList.remove('hidden');
-  
-  // Фокус на поле ввода
   document.getElementById('message').focus();
-  
-  // Очищаем ошибки
   document.getElementById('register-error').textContent = '';
 });
 
@@ -76,17 +70,9 @@ function login() {
 
 socket.on('login_success', () => {
   myLogin = document.getElementById('login').value.trim();
-  
-  // Удаляем экран входа
   document.getElementById('login-screen').remove();
-  
-  // Показываем чат
   document.getElementById('chat-screen').classList.remove('hidden');
-  
-  // Фокус на поле ввода
   document.getElementById('message').focus();
-  
-  // Очищаем ошибки
   document.getElementById('error').textContent = '';
 });
 
@@ -98,9 +84,11 @@ socket.on('login_error', (msg) => {
 
 socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
+  if (!chatsList) return;
+  
   chatsList.innerHTML = '';
   
-  // Добавляем "Общий чат" в начало
+  // Общий чат
   const generalChat = document.createElement('div');
   generalChat.className = `chat-item general ${currentChat === 'general' ? 'active' : ''}`;
   generalChat.dataset.chat = 'general';
@@ -114,15 +102,14 @@ socket.on('users_update', (users) => {
   generalChat.addEventListener('click', () => switchChat('general'));
   chatsList.appendChild(generalChat);
   
-  // Добавляем пользователей как приватные чаты
+  // Пользователи
   users.forEach(user => {
-    if (user.nickname === myLogin) return; // Не показываем себя
+    if (user.nickname === myLogin) return;
     
     const chatDiv = document.createElement('div');
     chatDiv.className = `chat-item ${currentChat === user.nickname ? 'active' : ''}`;
     chatDiv.dataset.chat = user.nickname;
     
-    // Первая буква логина как аватарка
     const firstLetter = user.nickname.charAt(0).toUpperCase();
     
     chatDiv.innerHTML = `
@@ -140,61 +127,46 @@ socket.on('users_update', (users) => {
 
 // Переключение между чатами
 function switchChat(chatName) {
-  console.log('switchChat вызван:', chatName);
-  
   currentChat = chatName;
   
-  // Убираем подсветку со всех чатов
-  const allChats = document.querySelectorAll('.chat-item');
-  console.log('Всего чатов:', allChats.length);
-  
-  allChats.forEach(item => {
+  // Убираем подсветку со ВСЕХ чатов
+  document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active');
-    console.log('Убран класс active с:', item.dataset.chat);
   });
   
-  // Добавляем подсветку только текущему чату
+  // Добавляем подсветку ТОЛЬКО текущему чату
   const activeChat = document.querySelector(`.chat-item[data-chat="${chatName}"]`);
   if (activeChat) {
     activeChat.classList.add('active');
-    console.log('Добавлен класс active к:', chatName);
-  } else {
-    console.log('Чат не найден:', chatName);
   }
   
-  // Меняем заголовок чата
+  // Меняем заголовок
   const chatHeader = document.querySelector('.chat-header h2');
   if (chatHeader) {
-    if (chatName === 'general') {
-      chatHeader.textContent = '💬 Общий чат';
-    } else {
-      chatHeader.textContent = `💬 ${chatName}`;
-    }
+    chatHeader.textContent = chatName === 'general' ? '💬 Общий чат' : `💬 ${chatName}`;
   }
   
-  // Обновляем аватарку в заголовке
+  // Меняем аватарку
   const headerAvatar = document.querySelector('.chat-header-avatar');
   if (headerAvatar) {
     if (chatName === 'general') {
       headerAvatar.textContent = '👥';
       headerAvatar.style.background = '#66ff00';
     } else {
-      // Первая буква логина
-      const firstLetter = chatName.charAt(0).toUpperCase();
-      headerAvatar.textContent = firstLetter;
+      headerAvatar.textContent = chatName.charAt(0).toUpperCase();
       headerAvatar.style.background = '#66ff00';
     }
   }
   
-  // Очищаем сообщения и загружаем нужные
+  // Очищаем сообщения и загружаем историю
   const messagesDiv = document.getElementById('messages');
-  messagesDiv.innerHTML = '';
+  if (messagesDiv) messagesDiv.innerHTML = '';
   
   // Очищаем статус печати
   typingUsers.clear();
   updateTypingDisplay();
   
-  // Запрашиваем историю для текущего чата
+  // Загружаем историю
   socket.emit('get_history', chatName);
 }
 
@@ -205,7 +177,6 @@ socket.on('history', (messages) => {
 });
 
 socket.on('message', (msg) => {
-  // Фильтруем сообщения только для текущего чата
   if (msg.to && msg.to !== 'general') {
     // Приватное сообщение
     if (msg.to === currentChat || msg.from === currentChat) {
@@ -221,6 +192,8 @@ socket.on('message', (msg) => {
 
 socket.on('system_message', (text) => {
   const messagesDiv = document.getElementById('messages');
+  if (!messagesDiv) return;
+  
   const msgDiv = document.createElement('div');
   msgDiv.className = 'message system';
   msgDiv.textContent = text;
@@ -230,15 +203,14 @@ socket.on('system_message', (text) => {
 
 function addMessage(msg) {
   const messagesDiv = document.getElementById('messages');
-  const msgDiv = document.createElement('div');
+  if (!messagesDiv) return;
   
-  // Определяем, чьё сообщение
+  const msgDiv = document.createElement('div');
   const isOwn = msg.nickname === myLogin;
   msgDiv.className = `message ${isOwn ? 'own' : 'other'}`;
   
-  // Форматируем время в 24-часовом формате
-  const now = new Date();
-  const time = msg.time || now.toLocaleTimeString([], { 
+  // Время в 24-часовом формате, Москва
+  const time = msg.time || new Date().toLocaleTimeString([], { 
     hour: '2-digit', 
     minute: '2-digit',
     hour12: false,
@@ -266,12 +238,10 @@ function sendMessage() {
   const text = input.value.trim();
   
   if (text) {
-    // Отправляем сообщение в текущий чат
-    if (currentChat === 'general') {
-      socket.emit('message', { text, to: 'general' });
-    } else {
-      socket.emit('message', { text, to: currentChat });
-    }
+    socket.emit('message', { 
+      text, 
+      to: currentChat === 'general' ? 'general' : currentChat 
+    });
     input.value = '';
   }
 }
@@ -279,24 +249,18 @@ function sendMessage() {
 // ==================== СТАТУС ПЕЧАТИ ====================
 
 let typingTimeout = null;
-const TYPING_DELAY = 3000; // 3 секунды неактивности = перестал печатать
+const TYPING_DELAY = 3000;
 
 document.getElementById('message')?.addEventListener('input', () => {
-  // Пользователь начал печатать
   socket.emit('typing', { isTyping: true });
   
-  // Сбросить таймер
-  if (typingTimeout) {
-    clearTimeout(typingTimeout);
-  }
+  if (typingTimeout) clearTimeout(typingTimeout);
   
-  // Если 3 секунды не печатает — отправить "перестал печатать"
   typingTimeout = setTimeout(() => {
     socket.emit('typing', { isTyping: false });
   }, TYPING_DELAY);
 });
 
-// Получение статуса от других пользователей
 socket.on('user_typing', (data) => {
   if (!data.nickname || data.nickname === myLogin) return;
   
@@ -313,8 +277,7 @@ function updateTypingDisplay() {
   const typingIndicator = document.getElementById('typing-indicator');
   if (!typingIndicator) return;
   
-  // Показываем только в текущем активном чате
-  if (typingUsers.size > 0) {
+  if (typingUsers.size > 0 && currentChat === 'general') {
     const users = Array.from(typingUsers.keys()).join(', ');
     typingIndicator.textContent = `${users} печатает...`;
     typingIndicator.classList.remove('hidden');
@@ -323,7 +286,8 @@ function updateTypingDisplay() {
   }
 }
 
-// Enter для отправки
+// ==================== ОБРАБОТЧИКИ КЛАВИАТУРЫ ====================
+
 document.getElementById('message')?.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
@@ -357,4 +321,3 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
