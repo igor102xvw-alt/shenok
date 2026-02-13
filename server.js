@@ -263,7 +263,12 @@ io.on('connection', (socket) => {
     const message = {
       nickname: socket.nickname,
       text: text,
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: now.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Moscow'
+      })
     };
     
     if (to === 'general') {
@@ -278,8 +283,9 @@ io.on('connection', (socket) => {
         console.error('❌ Ошибка сохранения общего сообщения:', err);
       }
       
+      // Сохраняем в памяти с лимитом 500 сообщений
       messages.push(message);
-      if (messages.length > 100) {
+      if (messages.length > 500) {
         messages.shift();
       }
       
@@ -344,7 +350,12 @@ io.on('connection', (socket) => {
         const dbMessages = result.rows.map(row => ({
           nickname: row.nickname,
           text: row.text,
-          time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: new Date(row.created_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
         })).reverse();
         
         socket.emit('history', dbMessages);
@@ -386,7 +397,12 @@ io.on('connection', (socket) => {
         const dbMessages = result.rows.map(row => ({
           nickname: row.sender_login,
           text: row.text,
-          time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: new Date(row.created_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
         }));
         
         socket.emit('history', dbMessages);
