@@ -37,7 +37,9 @@ socket.on('register_success', () => {
   document.getElementById('login-screen').remove();
   document.getElementById('chat-screen').classList.remove('hidden');
   document.getElementById('message').focus();
-  document.getElementById('register-error').textContent = '';
+
+  const registerErrorEl = document.getElementById('register-error');
+  if (registerErrorEl) registerErrorEl.textContent = '';
 });
 
 socket.on('register_error', (msg) => {
@@ -68,16 +70,16 @@ function login() {
   socket.emit('login', { login, password });
 }
 
+// В обработчике login_success (строка ~115)
 socket.on('login_success', () => {
   myLogin = document.getElementById('login').value.trim();
   document.getElementById('login-screen').remove();
   document.getElementById('chat-screen').classList.remove('hidden');
   document.getElementById('message').focus();
-  document.getElementById('error').textContent = '';
-});
-
-socket.on('login_error', (msg) => {
-  showError(msg);
+  
+  // Добавляем проверку
+  const errorEl = document.getElementById('error');
+  if (errorEl) errorEl.textContent = '';
 });
 
 // ==================== СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
@@ -321,3 +323,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
