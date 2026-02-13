@@ -8,66 +8,71 @@
 </head>
 <body>
  <!-- Экран входа -->
-<div id="login-screen" class="screen">
-  <div class="login-container">
-    <h1>puppy</h1>
-    
-    <!-- Форма входа -->
-    <div id="login-form">
-      <h2>Вход</h2>
-      <input type="text" id="login" placeholder="Логин" autocomplete="username">
-      <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
-      <button onclick="login()">Войти</button>
-      <p id="error" class="error"></p>
-      <p class="switch-form">
-        Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Регистрация</a>
-      </p>
-    </div>
-    
-    <!-- Форма регистрации -->
-    <div id="register-form" class="hidden">
-      <h2>✨ Регистрация</h2>
-      <input type="text" id="register-login" placeholder="Логин" autocomplete="username">
-      <input type="password" id="register-password" placeholder="Пароль" autocomplete="new-password">
-      <input type="password" id="register-password-confirm" placeholder="Подтвердите пароль" autocomplete="new-password">
-      <button onclick="register()">Зарегистрироваться</button>
-      <p id="register-error" class="error"></p>
-      <p class="switch-form">
-        Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Вход</a>
-      </p>
+  <div id="login-screen" class="screen">
+    <div class="login-container">
+      <h1>puppy</h1>
+      
+      <!-- Форма входа -->
+      <div id="login-form">
+        <h2>Вход</h2>
+        <input type="text" id="login" placeholder="Логин" autocomplete="username">
+        <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+        <button onclick="login()">Войти</button>
+        <p id="error" class="error"></p>
+        <p class="switch-form">
+          Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Регистрация</a>
+        </p>
+      </div>
+      
+      <!-- Форма регистрации -->
+      <div id="register-form" class="hidden">
+        <h2>✨ Регистрация</h2>
+        <input type="text" id="register-login" placeholder="Логин" autocomplete="username">
+        <input type="password" id="register-password" placeholder="Пароль" autocomplete="new-password">
+        <input type="password" id="register-password-confirm" placeholder="Подтвердите пароль" autocomplete="new-password">
+        <button onclick="register()">Зарегистрироваться</button>
+        <p id="register-error" class="error"></p>
+        <p class="switch-form">
+          Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Вход</a>
+        </p>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- Основной интерфейс -->
   <div id="chat-screen" class="screen hidden">
     <div class="app-container">
       <!-- Левая панель: Список пользователей -->
       <div class="sidebar">
-  <div class="sidebar-header">
-    <h2>💬 Чаты</h2>
-  </div>
-  <div class="chats-list" id="chats-list">
-    <!-- Список чатов будет здесь -->
-  </div>
-</div>
+        <div class="sidebar-header">
+          <h2>💬 Чаты</h2>
+        </div>
+        <div class="chats-list" id="chats-list">
+          <!-- Список чатов будет здесь -->
+        </div>
+      </div>
 
       <!-- Правая панель: Чат -->
       <div class="chat-container">
         <div class="chat-header">
-  <div class="chat-header-content">
-    <div class="chat-header-avatar">👥</div>
-    <h2>💬 Общий чат</h2>
-  </div>
-</div>
+          <div class="chat-header-content">
+            <div class="chat-header-avatar">👥</div>
+            <h2>💬 Общий чат</h2>
+          </div>
+        </div>
+        
         <div class="messages-container" id="messages">
           <!-- Сообщения будут здесь -->
         </div>
+        
+        <div class="typing-indicator-container">
+          <div id="typing-indicator" class="typing-indicator hidden"></div>
+        </div>
+        
         <div class="input-area">
-  <input type="text" id="message" placeholder="Сообщение..." autocomplete="off">
-  <button onclick="sendMessage()">Отправить</button>
-</div>
-<div id="typing-indicator" class="typing-indicator"></div>
+          <input type="text" id="message" placeholder="Сообщение..." autocomplete="off">
+          <button onclick="sendMessage()">Отправить</button>
+        </div>
       </div>
     </div>
   </div>
@@ -76,9 +81,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
