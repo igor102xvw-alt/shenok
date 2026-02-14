@@ -204,15 +204,33 @@ socket.on('history', (messages) => {
 });
 
 socket.on('message', (msg) => {
+  console.log('=== Получено сообщение ===');
+  console.log('Текущий чат:', currentChat);
+  console.log('Сообщение:', msg);
+  
   if (msg.to && msg.to !== 'general') {
     // Приватное сообщение
+    console.log('Это приватное сообщение');
+    console.log('msg.to:', msg.to);
+    console.log('msg.from:', msg.from);
+    console.log('currentChat:', currentChat);
+    console.log('Условие 1 (msg.to === currentChat):', msg.to === currentChat);
+    console.log('Условие 2 (msg.from === currentChat):', msg.from === currentChat);
+    
     if (msg.to === currentChat || msg.from === currentChat) {
+      console.log('Добавляем сообщение в чат');
       addMessage(msg);
+    } else {
+      console.log('Сообщение не для текущего чата, пропускаем');
     }
   } else {
     // Общее сообщение
+    console.log('Это общее сообщение');
     if (currentChat === 'general') {
+      console.log('Добавляем сообщение в общий чат');
       addMessage(msg);
+    } else {
+      console.log('Не в общем чате, пропускаем');
     }
   }
 });
@@ -548,6 +566,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
