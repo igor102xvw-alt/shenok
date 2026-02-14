@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-// Проверка наличия папки public и файла index.html
 console.log("Проверка папки public:");
 console.log("Путь:", path.join(__dirname, 'public'));
 console.log("Существует?", fs.existsSync(path.join(__dirname, 'public')));
@@ -10,10 +9,13 @@ console.log("Содержит index.html?", fs.existsSync(path.join(__dirname, '
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
+
+// Хэширование паролей
 const bcrypt = require('bcrypt');
+
+// Подключение к базе данных
 const { Pool } = require('pg');
 
-// Подключение к PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -35,11 +37,12 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Подключаем статику из папки public
+// Подключаем статику
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Хранение пользователей (ник, онлайн/оффлайн)
+// Храним пользователей и сообщения
 const users = new Map();
+const messages = [];
 
 // Создание таблиц при запуске
 async function createTables() {
@@ -54,15 +57,15 @@ async function createTables() {
       )
     `);
     
-    // Удаляем таблицу messages (общий чат) — теперь не нужна
-    // await pool.query(`
-    //   CREATE TABLE IF NOT EXISTS messages (
-    //     id SERIAL PRIMARY KEY,
-    //     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    //     text TEXT NOT NULL,
-    //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    //   )
-    // `);
+    // Таблица общих сообщений
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     
     // Таблица приватных сообщений
     await pool.query(`
@@ -75,7 +78,7 @@ async function createTables() {
       )
     `);
     
-    console.log('✅ Таблицы users и private_messages созданы');
+    console.log('✅ Таблицы users, messages и private_messages созданы');
   } catch (err) {
     console.error('❌ Ошибка создания таблиц:', err);
   }
@@ -126,28 +129,28 @@ io.on('connection', (socket) => {
   // Регистрация нового пользователя
   socket.on('register', async (data) => {
     const { login, password, passwordConfirm } = data;
-
+    
     // Валидация
     if (login.length < 3 || login.length > 20) {
       socket.emit('register_error', 'Логин должен быть от 3 до 20 символов');
       return;
     }
-
+    
     if (!/^[a-zA-Z0-9]+$/.test(login)) {
       socket.emit('register_error', 'Логин может содержать только буквы и цифры');
       return;
     }
-
+    
     if (password.length < 6) {
       socket.emit('register_error', 'Пароль должен быть минимум 6 символов');
       return;
     }
-
+    
     if (password !== passwordConfirm) {
       socket.emit('register_error', 'Пароли не совпадают');
       return;
     }
-
+    
     try {
       // Проверяем, существует ли пользователь
       const existingUser = await pool.query(
@@ -189,6 +192,8 @@ io.on('connection', (socket) => {
       
       // Обновляем список пользователей
       broadcastUsersList();
+      
+      console.log(`✅ Пользователь ${user.login} зарегистрировался`);
     } catch (err) {
       console.error('❌ Ошибка регистрации:', err);
       socket.emit('register_error', 'Ошибка сервера. Попробуйте позже.');
@@ -198,7 +203,7 @@ io.on('connection', (socket) => {
   // Вход существующего пользователя
   socket.on('login', async (data) => {
     const { login, password } = data;
-
+    
     try {
       // Ищем пользователя
       const result = await pool.query(
@@ -239,123 +244,172 @@ io.on('connection', (socket) => {
       
       // Обновляем список пользователей
       broadcastUsersList();
+      
+      console.log(`✅ Пользователь ${user.login} вошёл в систему`);
     } catch (err) {
       console.error('❌ Ошибка входа:', err);
       socket.emit('login_error', 'Ошибка сервера. Попробуйте позже.');
     }
   });
 
-  // Получение сообщения (только приватное)
+  // Получение сообщения
   socket.on('message', async (data) => {
     if (!socket.nickname || !socket.userId) return;
-
-    const text = data.text.trim();
-    if (!text) return;
-
-    // Теперь to — всегда никнейм получателя, нет 'general'
-    const to = data.to;
-
-    if (!to) {
-      socket.emit('private_message_error', 'Не указан получатель');
-      return;
-    }
-
+    
+    const text = data.text;
+    const to = data.to || 'general';
+    
     const now = new Date();
     const message = {
       nickname: socket.nickname,
       text: text,
-      time: now.toLocaleTimeString([], {
-        hour: '2-digit',
+      time: now.toLocaleTimeString([], { 
+        hour: '2-digit', 
         minute: '2-digit',
         hour12: false,
         timeZone: 'Europe/Moscow'
       })
     };
-
-    // Обрабатываем только приватные сообщения
-    try {
-      const recipientResult = await pool.query(
-        'SELECT id FROM users WHERE login = $1',
-        [to]
-      );
-
-      if (recipientResult.rows.length === 0) {
-        console.error('❌ Получатель не найден:', to);
-        socket.emit('private_message_error', 'Получатель не найден');
-        return;
+    
+    if (to === 'general') {
+      // Общее сообщение
+      try {
+        await pool.query(
+          'INSERT INTO messages (user_id, text) VALUES ($1, $2)',
+          [socket.userId, text]
+        );
+        console.log('✅ Общее сообщение сохранено в БД');
+      } catch (err) {
+        console.error('❌ Ошибка сохранения общего сообщения:', err);
       }
-
-      const recipientId = recipientResult.rows[0].id;
-
-      // Сохраняем в БД
-      await pool.query(
-        'INSERT INTO private_messages (sender_id, recipient_id, text) VALUES ($1, $2, $3)',
-        [socket.userId, recipientId, text]
-      );
-
+      
+      // Сохраняем в памяти с лимитом 500 сообщений
+      messages.push(message);
+      if (messages.length > 500) {
+        messages.shift();
+      }
+      
+      io.emit('message', { ...message, to: 'general' });
+    } else {
+      // Приватное сообщение
+      try {
+        // Находим получателя по логину
+        const recipientResult = await pool.query(
+          'SELECT id FROM users WHERE login = $1',
+          [to]
+        );
+        
+        if (recipientResult.rows.length === 0) {
+          console.error('❌ Получатель не найден:', to);
+          return;
+        }
+        
+        const recipientId = recipientResult.rows[0].id;
+        
+        // Сохраняем в БД
+        await pool.query(
+          'INSERT INTO private_messages (sender_id, recipient_id, text) VALUES ($1, $2, $3)',
+          [socket.userId, recipientId, text]
+        );
+        
+        console.log(`✅ Приватное сообщение сохранено: ${socket.nickname} → ${to}`);
+      } catch (err) {
+        console.error('❌ Ошибка сохранения приватного сообщения:', err);
+      }
+      
+      // Отправляем сообщение обоим участникам
+      io.to(socket.id).emit('message', { ...message, to, from: socket.nickname });
+      
       // Находим сокет получателя
-      const recipientSocket = Array.from(users.entries()).find(([id, user]) =>
+      const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
         user.nickname === to
       );
-
+      
       if (recipientSocket) {
-        const [recipientSocketId] = recipientSocket;
-        io.to(recipientSocketId).emit('message', { ...message, to, from: socket.nickname });
-        socket.emit('message_sent', { ...message, to, from: socket.nickname });
-      } else {
-        socket.emit('private_message_status', 'offline');
+        const [recipientId] = recipientSocket;
+        io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
       }
-    } catch (err) {
-      console.error('❌ Ошибка сохранения приватного сообщения:', err);
     }
   });
 
-  // Загрузка истории (только приватных сообщений)
+  // Загрузка истории чата
   socket.on('get_history', async (chatName) => {
     if (!socket.userId) return;
-
-    // Теперь всегда загружаем приватную историю
-    try {
-      const recipientResult = await pool.query(
-        'SELECT id FROM users WHERE login = $1',
-        [chatName]
-      );
-
-      if (recipientResult.rows.length === 0) {
-        socket.emit('history', []);
-        return;
+    
+    if (chatName === 'general') {
+      // Загружаем историю общих сообщений из БД
+      try {
+        const result = await pool.query(`
+          SELECT u.login as nickname, m.text, m.created_at
+          FROM messages m
+          JOIN users u ON u.id = m.user_id
+          ORDER BY m.created_at DESC
+          LIMIT 100
+        `);
+        
+        const dbMessages = result.rows.map(row => ({
+          nickname: row.nickname,
+          text: row.text,
+          time: new Date(row.created_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
+        })).reverse();
+        
+        socket.emit('history', dbMessages);
+      } catch (err) {
+        console.error('❌ Ошибка загрузки истории общего чата:', err);
+        socket.emit('history', messages);
       }
-
-      const recipientId = recipientResult.rows[0].id;
-
-      const result = await pool.query(`
-        SELECT 
-          u.login as sender_login,
-          pm.text,
-          pm.created_at
-        FROM private_messages pm
-        JOIN users u ON u.id = pm.sender_id
-        WHERE (pm.sender_id = $1 AND pm.recipient_id = $2)
-           OR (pm.sender_id = $2 AND pm.recipient_id = $1)
-        ORDER BY pm.created_at ASC
-        LIMIT 100
-      `, [socket.userId, recipientId]);
-
-      const dbMessages = result.rows.map(row => ({
-        nickname: row.sender_login,
-        text: row.text,
-        time: new Date(row.created_at).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: 'Europe/Moscow'
-        })
-      }));
-
-      socket.emit('history', dbMessages);
-    } catch (err) {
-      console.error('❌ Ошибка загрузки истории приватного чата:', err);
-      socket.emit('history', []);
+    } else {
+      // Загружаем историю приватных сообщений из БД
+      try {
+        // Находим получателя по логину
+        const recipientResult = await pool.query(
+          'SELECT id FROM users WHERE login = $1',
+          [chatName]
+        );
+        
+        if (recipientResult.rows.length === 0) {
+          console.error('❌ Получатель не найден:', chatName);
+          socket.emit('history', []);
+          return;
+        }
+        
+        const recipientId = recipientResult.rows[0].id;
+        
+        // Загружаем сообщения между двумя пользователями
+        const result = await pool.query(`
+          SELECT 
+            u.login as sender_login,
+            pm.text,
+            pm.created_at
+          FROM private_messages pm
+          JOIN users u ON u.id = pm.sender_id
+          WHERE (pm.sender_id = $1 AND pm.recipient_id = $2)
+             OR (pm.sender_id = $2 AND pm.recipient_id = $1)
+          ORDER BY pm.created_at ASC
+          LIMIT 100
+        `, [socket.userId, recipientId]);
+        
+        const dbMessages = result.rows.map(row => ({
+          nickname: row.sender_login,
+          text: row.text,
+          time: new Date(row.created_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
+        }));
+        
+        socket.emit('history', dbMessages);
+      } catch (err) {
+        console.error('❌ Ошибка загрузки истории приватного чата:', err);
+        socket.emit('history', []);
+      }
     }
   });
 
