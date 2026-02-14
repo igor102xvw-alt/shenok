@@ -80,9 +80,32 @@ async function createTables() {
       )
     `);
     
-    console.log('✅ Таблицы users, messages и private_messages созданы');
+    // Добавляем колонку edited_at в существующие таблицы (если её нет)
+    try {
+      await pool.query(`
+        ALTER TABLE messages ADD COLUMN edited_at TIMESTAMP
+      `);
+      console.log('✅ Колонка edited_at добавлена в таблицу messages');
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении edited_at в messages:', err);
+      }
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE private_messages ADD COLUMN edited_at TIMESTAMP
+      `);
+      console.log('✅ Колонка edited_at добавлена в таблицу private_messages');
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении edited_at в private_messages:', err);
+      }
+    }
+    
+    console.log('✅ Таблицы users, messages и private_messages созданы/обновлены');
   } catch (err) {
-    console.error('❌ Ошибка создания таблиц:', err);
+    console.error('❌ Ошибка создания/обновления таблиц:', err);
   }
 }
 
@@ -560,3 +583,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
