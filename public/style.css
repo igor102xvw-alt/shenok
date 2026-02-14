@@ -480,6 +480,58 @@ body {
   font-style: italic;
 }
 
+/* Контекстное меню */
+.context-menu {
+  position: fixed;
+  background: #1a1a1a;
+  border: 1px solid #66ff00;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  padding: 8px 0;
+  z-index: 1000;
+  display: none;
+  min-width: 180px;
+}
+
+.context-menu.active {
+  display: block;
+}
+
+.context-menu-item {
+  padding: 10px 15px;
+  color: #66ff00;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.context-menu-item:hover {
+  background: rgba(102, 255, 0, 0.1);
+}
+
+.context-menu-item i {
+  font-size: 16px;
+}
+
+/* Затемнение фона при открытом меню */
+.context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 999;
+  display: none;
+}
+
+.context-menu-overlay.active {
+  display: block;
+}
+
 /* Мобильная версия */
 @media (max-width: 768px) {
   .sidebar {
@@ -500,6 +552,7 @@ body {
     max-width: 90%;
   }
 }
+
 
 
 
