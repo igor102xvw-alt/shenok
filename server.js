@@ -63,6 +63,7 @@ async function createTables() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
+        image TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         edited_at TIMESTAMP
       )
@@ -75,6 +76,7 @@ async function createTables() {
         sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         recipient_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
+        image TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         edited_at TIMESTAMP
       )
@@ -126,7 +128,28 @@ async function createTables() {
       }
     }
     
-    console.log('✅ Таблицы обновлены с колонками для цитат');
+    // Добавляем колонки для изображений
+    try {
+      await pool.query(`
+        ALTER TABLE messages ADD COLUMN image TEXT
+      `);
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении image в messages:', err);
+      }
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE private_messages ADD COLUMN image TEXT
+      `);
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении image в private_messages:', err);
+      }
+    }
+    
+    console.log('✅ Таблицы обновлены с колонками для изображений');
   } catch (err) {
     console.error('❌ Ошибка создания/обновления таблиц:', err);
   }
@@ -301,105 +324,108 @@ io.on('connection', (socket) => {
   });
 
   // Получение сообщения
-  socket.on('message', async (data) => {
-    if (!socket.nickname || !socket.userId) return;
-    
-    const text = data.text;
-    const to = data.to || 'general';
-    const quote = data.quote || null;
-    
-    if (to === 'general') {
-      // Общее сообщение
-      try {
-        const result = await pool.query(
-          'INSERT INTO messages (user_id, text, quote_nickname, quote_text) VALUES ($1, $2, $3, $4) RETURNING id, created_at',
-          [socket.userId, text, quote ? quote.nickname : null, quote ? quote.text : null]
-        );
-        
-        const messageId = result.rows[0].id;
-        const createdAt = result.rows[0].created_at;
-        
-        const messageWithId = {
-          id: messageId,
-          nickname: socket.nickname,
-          text: text,
-          time: new Date(createdAt).toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false,
-            timeZone: 'Europe/Moscow'
-          }),
-          quote: quote
-        };
-        
-        messages.push(messageWithId);
-        if (messages.length > 500) {
-          messages.shift();
-        }
-        
-        io.emit('message', { ...messageWithId, to: 'general' });
-        console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
-      } catch (err) {
-        console.error('❌ Ошибка сохранения общего сообщения:', err);
+socket.on('message', async (data) => {
+  if (!socket.nickname || !socket.userId) return;
+  
+  const text = data.text || '';
+  const to = data.to || 'general';
+  const quote = data.quote || null;
+  const image = data.image || null;
+  
+  if (to === 'general') {
+    // Общее сообщение
+    try {
+      const result = await pool.query(
+        'INSERT INTO messages (user_id, text, image, quote_nickname, quote_text) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at',
+        [socket.userId, text, image, quote ? quote.nickname : null, quote ? quote.text : null]
+      );
+      
+      const messageId = result.rows[0].id;
+      const createdAt = result.rows[0].created_at;
+      
+      const messageWithId = {
+        id: messageId,
+        nickname: socket.nickname,
+        text: text,
+        image: image,
+        time: new Date(createdAt).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Europe/Moscow'
+        }),
+        quote: quote
+      };
+      
+      messages.push(messageWithId);
+      if (messages.length > 500) {
+        messages.shift();
       }
-    } else {
-      // Приватное сообщение
-      try {
-        // Находим получателя по логину
-        const recipientResult = await pool.query(
-          'SELECT id FROM users WHERE login = $1',
-          [to]
-        );
-        
-        if (recipientResult.rows.length === 0) {
-          console.error('❌ Получатель не найден:', to);
-          return;
-        }
-        
-        const recipientId = recipientResult.rows[0].id;
-        
-        // Сохраняем в БД
-        const result = await pool.query(
-          'INSERT INTO private_messages (sender_id, recipient_id, text, quote_nickname, quote_text) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at',
-          [socket.userId, recipientId, text, quote ? quote.nickname : null, quote ? quote.text : null]
-        );
-        
-        const messageId = result.rows[0].id;
-        const createdAt = result.rows[0].created_at;
-        
-        const messageWithId = {
-          id: messageId,
-          nickname: socket.nickname,
-          text: text,
-          time: new Date(createdAt).toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false,
-            timeZone: 'Europe/Moscow'
-          }),
-          quote: quote
-        };
-        
-        console.log(`✅ Приватное сообщение сохранено: ${socket.nickname} → ${to}, ID: ${messageId}`);
-        
-        // Отправляем сообщение обоим участникам
-        io.to(socket.id).emit('message', { ...messageWithId, to, from: socket.nickname });
-        
-        // Находим сокет получателя
-        const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
-          user.nickname === to
-        );
-        
-        if (recipientSocket) {
-          const [recipientId] = recipientSocket;
-          io.to(recipientId).emit('message', { ...messageWithId, to, from: socket.nickname });
-        }
-      } catch (err) {
-        console.error('❌ Ошибка сохранения приватного сообщения:', err);
-      }
+      
+      io.emit('message', { ...messageWithId, to: 'general' });
+      console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
+    } catch (err) {
+      console.error('❌ Ошибка сохранения общего сообщения:', err);
     }
-  });
-
+  } else {
+    // Приватное сообщение
+    try {
+      // Находим получателя по логину
+      const recipientResult = await pool.query(
+        'SELECT id FROM users WHERE login = $1',
+        [to]
+      );
+      
+      if (recipientResult.rows.length === 0) {
+        console.error('❌ Получатель не найден:', to);
+        return;
+      }
+      
+      const recipientId = recipientResult.rows[0].id;
+      
+      // Сохраняем в БД
+      const result = await pool.query(
+        'INSERT INTO private_messages (sender_id, recipient_id, text, image, quote_nickname, quote_text) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at',
+        [socket.userId, recipientId, text, image, quote ? quote.nickname : null, quote ? quote.text : null]
+      );
+      
+      const messageId = result.rows[0].id;
+      const createdAt = result.rows[0].created_at;
+      
+      const messageWithId = {
+        id: messageId,
+        nickname: socket.nickname,
+        text: text,
+        image: image,
+        time: new Date(createdAt).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Europe/Moscow'
+        }),
+        quote: quote
+      };
+      
+      console.log(`✅ Приватное сообщение сохранено: ${socket.nickname} → ${to}, ID: ${messageId}`);
+      
+      // Отправляем сообщение обоим участникам
+      io.to(socket.id).emit('message', { ...messageWithId, to, from: socket.nickname });
+      
+      // Находим сокет получателя
+      const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+        user.nickname === to
+      );
+      
+      if (recipientSocket) {
+        const [recipientId] = recipientSocket;
+        io.to(recipientId).emit('message', { ...messageWithId, to, from: socket.nickname });
+      }
+    } catch (err) {
+      console.error('❌ Ошибка сохранения приватного сообщения:', err);
+    }
+  }
+});
+  
   // Редактирование сообщения
   socket.on('edit_message', async (data) => {
     if (!socket.userId) return;
@@ -635,3 +661,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
