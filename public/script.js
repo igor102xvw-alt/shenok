@@ -428,4 +428,117 @@ socket.on('message_deleted', (data) => {
   }
 });
 
+// Контекстное меню
+let contextMenu = null;
+let contextMenuOverlay = null;
+let currentMessageElement = null;
+
+// Создаём контекстное меню при загрузке
+function initContextMenu() {
+  contextMenu = document.createElement('div');
+  contextMenu.className = 'context-menu';
+  contextMenu.innerHTML = `
+    <div class="context-menu-item" onclick="contextMenuReply()">
+      <span>💬</span> Ответить
+    </div>
+    <div class="context-menu-item" onclick="contextMenuEdit()">
+      <span>✏️</span> Редактировать
+    </div>
+    <div class="context-menu-item" onclick="contextMenuDelete()">
+      <span>🗑️</span> Удалить
+    </div>
+  `;
+  document.body.appendChild(contextMenu);
+  
+  contextMenuOverlay = document.createElement('div');
+  contextMenuOverlay.className = 'context-menu-overlay';
+  document.body.appendChild(contextMenuOverlay);
+  
+  // Закрываем меню при клике вне его
+  contextMenuOverlay.addEventListener('click', () => {
+    contextMenu.classList.remove('active');
+    contextMenuOverlay.classList.remove('active');
+  });
+}
+
+// Открываем контекстное меню
+function openContextMenu(event, messageElement) {
+  event.preventDefault();
+  
+  currentMessageElement = messageElement;
+  
+  const rect = messageElement.getBoundingClientRect();
+  
+  contextMenu.style.left = `${rect.left}px`;
+  contextMenu.style.top = `${rect.bottom + 5}px`;
+  
+  contextMenu.classList.add('active');
+  contextMenuOverlay.classList.add('active');
+}
+
+// Закрываем контекстное меню
+function closeContextMenu() {
+  contextMenu.classList.remove('active');
+  contextMenuOverlay.classList.remove('active');
+  currentMessageElement = null;
+}
+
+// Действия контекстного меню
+function contextMenuReply() {
+  if (!currentMessageElement) return;
+  
+  const nickname = currentMessageElement.querySelector('.message-nickname').textContent;
+  const messageText = currentMessageElement.querySelector('.message-text').textContent;
+  
+  const input = document.getElementById('message');
+  input.value = `@${nickname} `;
+  input.focus();
+  
+  closeContextMenu();
+}
+
+function contextMenuEdit() {
+  if (!currentMessageElement) return;
+  
+  const messageTextDiv = currentMessageElement.querySelector('.message-text');
+  const currentText = messageTextDiv.textContent;
+  
+  const newText = prompt('Редактировать сообщение:', currentText);
+  if (newText && newText.trim() !== '' && newText !== currentText) {
+    const messageId = currentMessageElement.dataset.messageId;
+    
+    socket.emit('edit_message', {
+      id: messageId,
+      text: newText.trim(),
+      chat: currentChat
+    });
+  }
+  
+  closeContextMenu();
+}
+
+function contextMenuDelete() {
+  if (!currentMessageElement) return;
+  
+  if (!confirm('Удалить это сообщение?')) {
+    closeContextMenu();
+    return;
+  }
+  
+  const messageId = currentMessageElement.dataset.messageId;
+  
+  socket.emit('delete_message', {
+    id: messageId,
+    chat: currentChat
+  });
+  
+  currentMessageElement.remove();
+  closeContextMenu();
+}
+
+// Инициализируем контекстное меню при загрузке
+document.addEventListener('DOMContentLoaded', initContextMenu);
+
+
+
 
