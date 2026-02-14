@@ -1,6 +1,7 @@
 const socket = io();
 let myLogin = '';
 let currentChat = 'general';
+let currentImageFile = null;
 const typingUsers = new Map();
 
 // ==================== ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
@@ -288,6 +289,14 @@ function addMessage(msg) {
     `;
   }
   
+  // Формируем изображение если есть
+  let imageHTML = '';
+  if (msg.image) {
+    imageHTML = `
+      <img src="${msg.image}" class="message-image" onclick="showImageModal('${msg.image}')">
+    `;
+  }
+  
   msgDiv.innerHTML = `
     <div class="message-content">
       ${quoteHTML}
@@ -296,8 +305,9 @@ function addMessage(msg) {
         <div class="message-time">${time}</div>
         ${msg.edited ? '<span class="message-edited">(изменено)</span>' : ''}
       </div>
-      <div class="message-text">${escapeHtml(msg.text)}</div>
-      ${isOwn ? `
+      ${msg.text ? `<div class="message-text">${escapeHtml(msg.text)}</div>` : ''}
+      ${imageHTML}
+      ${isOwn && !msg.image ? `
         <div class="message-actions">
           <button class="btn-edit" onclick="editMessage(this)">✏️</button>
           <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
@@ -321,8 +331,25 @@ function sendMessage() {
   const input = document.getElementById('message');
   const text = input.value.trim();
   
-  if (text) {
-    // Проверяем есть ли цитата
+  if (currentImageFile) {
+    // Отправляем изображение
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageData = e.target.result;
+      
+      socket.emit('message', { 
+        text: text || '', 
+        to: currentChat === 'general' ? 'general' : currentChat,
+        image: imageData
+      });
+      
+      // Очищаем превью и файл
+      removeImagePreview();
+      input.value = '';
+    };
+    reader.readAsDataURL(currentImageFile);
+  } else if (text) {
+    // Отправляем обычное сообщение
     const quoteData = localStorage.getItem('quoteData');
     
     if (quoteData) {
@@ -349,7 +376,6 @@ function sendMessage() {
     input.value = '';
   }
 }
-
 // ==================== СТАТУС ПЕЧАТИ ====================
 
 let typingTimeout = null;
@@ -502,6 +528,7 @@ let currentMessageElement = null;
 
 // Создаём контекстное меню при загрузке
 function initContextMenu() {
+
   contextMenu = document.createElement('div');
   contextMenu.className = 'context-menu';
   contextMenu.innerHTML = `
@@ -526,6 +553,82 @@ function initContextMenu() {
     contextMenu.classList.remove('active');
     contextMenuOverlay.classList.remove('active');
   });
+}
+
+// Обработчик выбора изображения
+document.getElementById('image-upload')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Проверяем тип файла
+  if (!file.type.startsWith('image/')) {
+    alert('Пожалуйста, выберите изображение');
+    return;
+  }
+  
+  // Проверяем размер файла (максимум 5 МБ)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Размер изображения не должен превышать 5 МБ');
+    return;
+  }
+  
+  currentImageFile = file;
+  
+  // Показываем превью
+  showImagePreview(file);
+});
+
+// Показываем превью изображения
+function showImagePreview(file) {
+  const inputArea = document.querySelector('.input-area');
+  if (!inputArea) return;
+  
+  // Удаляем старое превью если есть
+  const existingPreview = document.querySelector('.image-preview-container');
+  if (existingPreview) existingPreview.remove();
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'image-preview-container';
+    previewContainer.innerHTML = `
+      <img src="${e.target.result}" class="image-preview" alt="Preview">
+      <div class="image-preview-info">
+        <div class="image-preview-name">${file.name}</div>
+        <div class="image-preview-size">${(file.size / 1024).toFixed(1)} КБ</div>
+      </div>
+      <button class="image-preview-remove" onclick="removeImagePreview()">✕</button>
+    `;
+    
+    inputArea.parentNode.insertBefore(previewContainer, inputArea);
+  };
+  reader.readAsDataURL(file);
+}
+
+// Удаляем превью изображения
+function removeImagePreview() {
+  const previewContainer = document.querySelector('.image-preview-container');
+  if (previewContainer) previewContainer.remove();
+  currentImageFile = null;
+  document.getElementById('image-upload').value = '';
+}
+
+// Модальное окно для просмотра изображения
+function showImageModal(src) {
+  let modal = document.querySelector('.image-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = '<img src="" alt="Full size">';
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+  }
+  
+  modal.querySelector('img').src = src;
+  modal.classList.add('active');
 }
 
 // Открываем контекстное меню
@@ -648,6 +751,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
