@@ -253,23 +253,25 @@ function addMessage(msg) {
   const editedLabel = msg.edited ? '<span class="message-edited">(изменено)</span>' : '';
   
   msgDiv.innerHTML = `
-    <div class="message-content">
-      <div class="message-header">
-        <div class="message-nickname">${escapeHtml(msg.nickname)}</div>
-        <div class="message-time">${time}</div>
-      </div>
-      <div class="message-text">${escapeHtml(msg.text)}</div>
-      ${isOwn ? `
-        <div class="message-actions">
-          <button class="btn-edit" onclick="editMessage(this)">✏️</button>
-          <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
-        </div>
-      ` : ''}
+  <div class="message-content">
+    <div class="message-header">
+      <div class="message-nickname">${escapeHtml(msg.nickname)}</div>
+      <div class="message-time">${time}</div>
     </div>
-  `;
-  
-  messagesDiv.appendChild(msgDiv);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    <div class="message-text">${escapeHtml(msg.text)}</div>
+    ${isOwn ? `
+      <div class="message-actions">
+        <button class="btn-edit" onclick="editMessage(this)">✏️</button>
+        <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
+      </div>
+    ` : ''}
+  </div>
+`;
+
+// Добавляем обработчик правого клика для контекстного меню
+msgDiv.addEventListener('contextmenu', (e) => {
+  openContextMenu(e, msgDiv);
+});
 }
 // ==================== ОТПРАВКА СООБЩЕНИЙ ====================
 
@@ -538,6 +540,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
