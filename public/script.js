@@ -90,15 +90,15 @@ socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
   if (!chatsList) return;
   
-  // Сохраняем текущий активный чат перед перерисовкой
-  const currentActiveChat = currentChat;
+  // Сохраняем текущий активный чат
+  const savedChat = currentChat;
   
   chatsList.innerHTML = '';
   
   // Общий чат
   const generalChat = document.createElement('div');
   generalChat.className = 'chat-item general';
-  if (currentActiveChat === 'general') {
+  if (savedChat === 'general') {
     generalChat.classList.add('active');
   }
   generalChat.dataset.chat = 'general';
@@ -118,7 +118,7 @@ socket.on('users_update', (users) => {
     
     const chatDiv = document.createElement('div');
     chatDiv.className = 'chat-item';
-    if (currentActiveChat === user.nickname) {
+    if (savedChat === user.nickname) {
       chatDiv.classList.add('active');
     }
     chatDiv.dataset.chat = user.nickname;
@@ -140,17 +140,30 @@ socket.on('users_update', (users) => {
 
 // Переключение между чатами
 function switchChat(chatName) {
+  console.log('=== switchChat вызван ===');
+  console.log('Текущий чат ДО:', currentChat);
+  console.log('Переключаемся на:', chatName);
+  
   currentChat = chatName;
   
+  console.log('Текущий чат ПОСЛЕ:', currentChat);
+  
   // Убираем подсветку со ВСЕХ чатов
-  document.querySelectorAll('.chat-item').forEach(item => {
+  const allChats = document.querySelectorAll('.chat-item');
+  console.log('Всего чатов:', allChats.length);
+  
+  allChats.forEach(item => {
     item.classList.remove('active');
+    console.log('Убран класс active с:', item.dataset.chat);
   });
   
   // Добавляем подсветку ТОЛЬКО текущему чату
   const activeChat = document.querySelector(`.chat-item[data-chat="${chatName}"]`);
   if (activeChat) {
     activeChat.classList.add('active');
+    console.log('Добавлен класс active к:', chatName);
+  } else {
+    console.log('Чат не найден:', chatName);
   }
   
   // Меняем заголовок
@@ -181,6 +194,8 @@ function switchChat(chatName) {
   
   // Загружаем историю
   socket.emit('get_history', chatName);
+  
+  console.log('=== switchChat завершён ===');
 }
 
 // ==================== СООБЩЕНИЯ ====================
@@ -334,4 +349,3 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
