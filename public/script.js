@@ -545,6 +545,36 @@ function contextMenuReply() {
   closeContextMenu();
 }
 
+// Показываем превью цитаты
+function showQuotePreview(quoteData) {
+  const inputArea = document.querySelector('.input-area');
+  if (!inputArea) return;
+  
+  // Удаляем старую цитату если есть
+  const existingQuote = document.querySelector('.quote-preview');
+  if (existingQuote) existingQuote.remove();
+  
+  const quotePreview = document.createElement('div');
+  quotePreview.className = 'quote-preview';
+  quotePreview.innerHTML = `
+    <div class="quote-preview-header">
+      <span class="quote-icon">💬</span>
+      <span class="quote-nickname">${escapeHtml(quoteData.nickname)}</span>
+      <button class="quote-remove" onclick="removeQuotePreview()">✕</button>
+    </div>
+    <div class="quote-preview-text">${escapeHtml(quoteData.text)}</div>
+  `;
+  
+  inputArea.parentNode.insertBefore(quotePreview, inputArea);
+}
+
+// Удаляем превью цитаты
+function removeQuotePreview() {
+  const quotePreview = document.querySelector('.quote-preview');
+  if (quotePreview) quotePreview.remove();
+  localStorage.removeItem('quoteData');
+}
+
 function contextMenuEdit() {
   if (!currentMessageElement) return;
   
@@ -586,6 +616,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
