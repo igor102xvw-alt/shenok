@@ -23,7 +23,6 @@ const pool = new Pool({
   }
 });
 
-// Проверка подключения к БД
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌ Ошибка подключения к базе данных:', err);
@@ -586,3 +585,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
