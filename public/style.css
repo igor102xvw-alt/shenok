@@ -408,6 +408,41 @@ body {
   box-shadow: 0 0 20px rgba(102, 255, 0, 0.5);
 }
 
+/* Тонкий прозрачный скроллбар */
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(102, 255, 0, 0.2);
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 255, 0, 0.4);
+}
+
+.chats-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chats-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chats-list::-webkit-scrollbar-thumb {
+  background: rgba(102, 255, 0, 0.2);
+  border-radius: 3px;
+}
+
+.chats-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 255, 0, 0.4);
+}
+
 /* Мобильная версия */
 @media (max-width: 768px) {
   .sidebar {
@@ -428,4 +463,5 @@ body {
     max-width: 90%;
   }
 }
+
 
