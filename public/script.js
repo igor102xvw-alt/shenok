@@ -200,7 +200,14 @@ function switchChat(chatName) {
 // ==================== СООБЩЕНИЯ ====================
 
 socket.on('history', (messages) => {
-  messages.forEach(msg => addMessage(msg));
+  console.log('=== Загружена история ===');
+  console.log('Количество сообщений:', messages.length);
+  console.log('Сообщения:', messages);
+  
+  messages.forEach(msg => {
+    console.log('Добавляем сообщение:', msg);
+    addMessage(msg);
+  });
 });
 
 socket.on('message', (msg) => {
@@ -566,6 +573,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
