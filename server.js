@@ -428,7 +428,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Загрузка истории чата
+ // Загрузка истории чата
   socket.on('get_history', async (chatName) => {
     if (!socket.userId) return;
     
@@ -436,7 +436,7 @@ io.on('connection', (socket) => {
       // Загружаем историю общих сообщений из БД
       try {
         const result = await pool.query(`
-          SELECT u.login as nickname, m.text, m.created_at
+          SELECT m.id, u.login as nickname, m.text, m.created_at, m.edited_at
           FROM messages m
           JOIN users u ON u.id = m.user_id
           ORDER BY m.created_at DESC
@@ -444,6 +444,7 @@ io.on('connection', (socket) => {
         `);
         
         const dbMessages = result.rows.map(row => ({
+          id: row.id,
           nickname: row.nickname,
           text: row.text,
           time: new Date(row.created_at).toLocaleTimeString([], { 
@@ -451,7 +452,8 @@ io.on('connection', (socket) => {
             minute: '2-digit',
             hour12: false,
             timeZone: 'Europe/Moscow'
-          })
+          }),
+          edited: !!row.edited_at
         })).reverse();
         
         socket.emit('history', dbMessages);
@@ -479,9 +481,11 @@ io.on('connection', (socket) => {
         // Загружаем сообщения между двумя пользователями
         const result = await pool.query(`
           SELECT 
+            pm.id,
             u.login as sender_login,
             pm.text,
-            pm.created_at
+            pm.created_at,
+            pm.edited_at
           FROM private_messages pm
           JOIN users u ON u.id = pm.sender_id
           WHERE (pm.sender_id = $1 AND pm.recipient_id = $2)
@@ -491,6 +495,7 @@ io.on('connection', (socket) => {
         `, [socket.userId, recipientId]);
         
         const dbMessages = result.rows.map(row => ({
+          id: row.id,
           nickname: row.sender_login,
           text: row.text,
           time: new Date(row.created_at).toLocaleTimeString([], { 
@@ -498,7 +503,8 @@ io.on('connection', (socket) => {
             minute: '2-digit',
             hour12: false,
             timeZone: 'Europe/Moscow'
-          })
+          }),
+          edited: !!row.edited_at
         }));
         
         socket.emit('history', dbMessages);
@@ -530,5 +536,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
