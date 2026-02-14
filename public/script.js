@@ -90,12 +90,15 @@ socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
   if (!chatsList) return;
   
+  // Сохраняем текущий активный чат перед перерисовкой
+  const currentActiveChat = currentChat;
+  
   chatsList.innerHTML = '';
   
   // Общий чат
   const generalChat = document.createElement('div');
   generalChat.className = 'chat-item general';
-  if (currentChat === 'general') {
+  if (currentActiveChat === 'general') {
     generalChat.classList.add('active');
   }
   generalChat.dataset.chat = 'general';
@@ -115,7 +118,7 @@ socket.on('users_update', (users) => {
     
     const chatDiv = document.createElement('div');
     chatDiv.className = 'chat-item';
-    if (currentChat === user.nickname) {
+    if (currentActiveChat === user.nickname) {
       chatDiv.classList.add('active');
     }
     chatDiv.dataset.chat = user.nickname;
@@ -331,3 +334,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
