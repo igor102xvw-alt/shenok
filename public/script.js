@@ -363,3 +363,69 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
+// Редактирование сообщения
+function editMessage(btn) {
+  const messageDiv = btn.closest('.message');
+  const messageTextDiv = messageDiv.querySelector('.message-text');
+  const currentText = messageTextDiv.textContent;
+  
+  const newText = prompt('Редактировать сообщение:', currentText);
+  if (newText && newText.trim() !== '' && newText !== currentText) {
+    const messageId = messageDiv.dataset.messageId;
+    
+    // Отправляем запрос на редактирование
+    socket.emit('edit_message', {
+      id: messageId,
+      text: newText.trim(),
+      chat: currentChat
+    });
+  }
+}
+
+// Удаление сообщения
+function deleteMessage(btn) {
+  if (!confirm('Удалить это сообщение?')) {
+    return;
+  }
+  
+  const messageDiv = btn.closest('.message');
+  const messageId = messageDiv.dataset.messageId;
+  
+  // Отправляем запрос на удаление
+  socket.emit('delete_message', {
+    id: messageId,
+    chat: currentChat
+  });
+  
+  // Удаляем сообщение визуально
+  messageDiv.remove();
+}
+
+// Обработка отредактированного сообщения
+socket.on('message_edited', (data) => {
+  const messageDiv = document.querySelector(`.message[data-message-id="${data.id}"]`);
+  if (messageDiv) {
+    const messageTextDiv = messageDiv.querySelector('.message-text');
+    if (messageTextDiv) {
+      messageTextDiv.textContent = data.text;
+    }
+    
+    // Добавляем метку "изменено"
+    const editedLabel = messageDiv.querySelector('.message-edited');
+    if (!editedLabel) {
+      const label = document.createElement('span');
+      label.className = 'message-edited';
+      label.textContent = '(изменено)';
+      messageDiv.querySelector('.message-time').after(label);
+    }
+  }
+});
+
+// Обработка удалённого сообщения
+socket.on('message_deleted', (data) => {
+  const messageDiv = document.querySelector(`.message[data-message-id="${data.id}"]`);
+  if (messageDiv) {
+    messageDiv.remove();
+  }
+});
+
