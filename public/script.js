@@ -237,6 +237,11 @@ function addMessage(msg) {
   const isOwn = msg.nickname === myLogin;
   msgDiv.className = `message ${isOwn ? 'own' : 'other'}`;
   
+  // Сохраняем ID сообщения (если есть)
+  if (msg.id) {
+    msgDiv.dataset.messageId = msg.id;
+  }
+  
   // Время в 24-часовом формате, Москва
   const time = msg.time || new Date().toLocaleTimeString([], { 
     hour: '2-digit', 
@@ -245,6 +250,9 @@ function addMessage(msg) {
     timeZone: 'Europe/Moscow'
   });
   
+  // Метка "изменено" если сообщение редактировалось
+  const editedLabel = msg.edited ? '<span class="message-edited">(изменено)</span>' : '';
+  
   msgDiv.innerHTML = `
     <div class="message-content">
       <div class="message-header">
@@ -252,13 +260,18 @@ function addMessage(msg) {
         <div class="message-time">${time}</div>
       </div>
       <div class="message-text">${escapeHtml(msg.text)}</div>
+      ${isOwn ? `
+        <div class="message-actions">
+          <button class="btn-edit" onclick="editMessage(this)">✏️</button>
+          <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
+        </div>
+      ` : ''}
     </div>
   `;
   
   messagesDiv.appendChild(msgDiv);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-
 // ==================== ОТПРАВКА СООБЩЕНИЙ ====================
 
 function sendMessage() {
@@ -349,3 +362,4 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
