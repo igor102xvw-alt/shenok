@@ -310,10 +310,30 @@ function sendMessage() {
   const text = input.value.trim();
   
   if (text) {
-    socket.emit('message', { 
-      text, 
-      to: currentChat === 'general' ? 'general' : currentChat 
-    });
+    // Проверяем есть ли цитата
+    const quoteData = localStorage.getItem('quoteData');
+    
+    if (quoteData) {
+      const quote = JSON.parse(quoteData);
+      
+      // Отправляем сообщение с цитатой
+      socket.emit('message', { 
+        text, 
+        to: currentChat === 'general' ? 'general' : currentChat,
+        quote: quote
+      });
+      
+      // Удаляем цитату после отправки
+      removeQuotePreview();
+      localStorage.removeItem('quoteData');
+    } else {
+      // Отправляем обычное сообщение
+      socket.emit('message', { 
+        text, 
+        to: currentChat === 'general' ? 'general' : currentChat 
+      });
+    }
+    
     input.value = '';
   }
 }
@@ -616,6 +636,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
