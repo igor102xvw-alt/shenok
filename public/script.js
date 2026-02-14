@@ -148,7 +148,6 @@ function switchChat(chatName) {
   
   console.log('Текущий чат ПОСЛЕ:', currentChat);
   
-  // Убираем подсветку со ВСЕХ чатов
   const allChats = document.querySelectorAll('.chat-item');
   console.log('Всего чатов:', allChats.length);
   
@@ -428,4 +427,5 @@ socket.on('message_deleted', (data) => {
     messageDiv.remove();
   }
 });
+
 
