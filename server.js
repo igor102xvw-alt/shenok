@@ -62,7 +62,8 @@ async function createTables() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        edited_at TIMESTAMP
       )
     `);
     
@@ -73,7 +74,8 @@ async function createTables() {
         sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         recipient_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         text TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        edited_at TIMESTAMP
       )
     `);
     
@@ -282,12 +284,6 @@ io.on('connection', (socket) => {
         console.error('❌ Ошибка сохранения общего сообщения:', err);
       }
       
-      // Сохраняем в памяти с лимитом 500 сообщений
-      messages.push(message);
-      if (messages.length > 500) {
-        messages.shift();
-      }
-      
       io.emit('message', { ...message, to: 'general' });
     } else {
       // Приватное сообщение
@@ -328,6 +324,107 @@ io.on('connection', (socket) => {
         const [recipientId] = recipientSocket;
         io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
       }
+    }
+  });
+
+  // Редактирование сообщения
+  socket.on('edit_message', async (data) => {
+    if (!socket.userId) return;
+    
+    const { id, text, chat } = data;
+    
+    try {
+      if (chat === 'general') {
+        // Редактируем общее сообщение
+        const result = await pool.query(
+          'UPDATE messages SET text = $1, edited_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING id',
+          [text, id, socket.userId]
+        );
+        
+        if (result.rows.length > 0) {
+          // Отправляем обновлённое сообщение всем
+          io.emit('message_edited', {
+            id: id,
+            text: text
+          });
+          console.log(`✅ Сообщение ${id} отредактировано`);
+        }
+      } else {
+        // Редактируем приватное сообщение
+        const result = await pool.query(
+          'UPDATE private_messages SET text = $1, edited_at = CURRENT_TIMESTAMP WHERE id = $2 AND sender_id = $3 RETURNING id',
+          [text, id, socket.userId]
+        );
+        
+        if (result.rows.length > 0) {
+          // Отправляем обновлённое сообщение обоим участникам
+          io.to(socket.id).emit('message_edited', {
+            id: id,
+            text: text
+          });
+          
+          // Находим сокет получателя
+          const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+            user.nickname === chat
+          );
+          
+          if (recipientSocket) {
+            const [recipientId] = recipientSocket;
+            io.to(recipientId).emit('message_edited', {
+              id: id,
+              text: text
+            });
+          }
+          
+          console.log(`✅ Приватное сообщение ${id} отредактировано`);
+        }
+      }
+    } catch (err) {
+      console.error('❌ Ошибка редактирования сообщения:', err);
+    }
+  });
+
+  // Удаление сообщения
+  socket.on('delete_message', async (data) => {
+    if (!socket.userId) return;
+    
+    const { id, chat } = data;
+    
+    try {
+      if (chat === 'general') {
+        // Удаляем общее сообщение
+        await pool.query(
+          'DELETE FROM messages WHERE id = $1 AND user_id = $2',
+          [id, socket.userId]
+        );
+        
+        // Отправляем команду на удаление всем
+        io.emit('message_deleted', { id: id });
+        console.log(`✅ Сообщение ${id} удалено`);
+      } else {
+        // Удаляем приватное сообщение
+        await pool.query(
+          'DELETE FROM private_messages WHERE id = $1 AND sender_id = $2',
+          [id, socket.userId]
+        );
+        
+        // Отправляем команду на удаление обоим участникам
+        io.to(socket.id).emit('message_deleted', { id: id });
+        
+        // Находим сокет получателя
+        const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+          user.nickname === chat
+        );
+        
+        if (recipientSocket) {
+          const [recipientId] = recipientSocket;
+          io.to(recipientId).emit('message_deleted', { id: id });
+        }
+        
+        console.log(`✅ Приватное сообщение ${id} удалено`);
+      }
+    } catch (err) {
+      console.error('❌ Ошибка удаления сообщения:', err);
     }
   });
 
@@ -433,4 +530,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
