@@ -261,8 +261,6 @@ io.on('connection', (socket) => {
     const text = data.text;
     const to = data.to || 'general';
     
-    const now = new Date();
-    
     if (to === 'general') {
       // Общее сообщение
       try {
