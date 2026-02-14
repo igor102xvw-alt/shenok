@@ -337,34 +337,32 @@ io.on('connection', (socket) => {
     if (!socket.userId) return;
     
     if (chatName === 'general') {
-  // Загружаем историю общих сообщений из БД
-  try {
-    const result = await pool.query(`
-      SELECT u.login as nickname, m.text, m.created_at
-      FROM messages m
-      JOIN users u ON u.id = m.user_id
-      ORDER BY m.created_at DESC
-      LIMIT 100
-    `);
-    
-    const dbMessages = result.rows.map(row => ({
-      nickname: row.nickname,
-      text: row.text,
-      time: new Date(row.created_at).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Europe/Moscow'
-      })
-    })).reverse();
-    
-    console.log(`✅ Загружено ${dbMessages.length} сообщений из БД`);
-    socket.emit('history', dbMessages);
-  } catch (err) {
-    console.error('❌ Ошибка загрузки истории общего чата:', err);
-    socket.emit('history', messages);
-  }
-}
+      // Загружаем историю общих сообщений из БД
+      try {
+        const result = await pool.query(`
+          SELECT u.login as nickname, m.text, m.created_at
+          FROM messages m
+          JOIN users u ON u.id = m.user_id
+          ORDER BY m.created_at DESC
+          LIMIT 100
+        `);
+        
+        const dbMessages = result.rows.map(row => ({
+          nickname: row.nickname,
+          text: row.text,
+          time: new Date(row.created_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
+        })).reverse();
+        
+        socket.emit('history', dbMessages);
+      } catch (err) {
+        console.error('❌ Ошибка загрузки истории общего чата:', err);
+        socket.emit('history', messages);
+      }
     } else {
       // Загружаем историю приватных сообщений из БД
       try {
@@ -436,4 +434,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
-
