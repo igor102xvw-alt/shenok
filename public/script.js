@@ -566,9 +566,9 @@ function contextMenuReply() {
   // Сохраняем в локальном хранилище
   localStorage.setItem('quoteData', JSON.stringify(quoteData));
   
-  // Добавляем @username в поле ввода
+  // Просто фокусируемся на поле ввода (без @username)
   const input = document.getElementById('message');
-  input.value = `@${nickname} `;
+  input.value = '';
   input.focus();
   
   // Показываем превью цитаты над полем ввода
@@ -648,6 +648,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
