@@ -42,6 +42,9 @@
   <!-- Основной интерфейс -->
   <div id="chat-screen" class="screen hidden">
     <div class="app-container">
+      <!-- Кнопка открытия меню для мобильных устройств -->
+      <button class="menu-button" onclick="toggleSidebar()">&#9776;</button>
+      
       <!-- Левая панель: Список пользователей -->
       <div class="sidebar">
         <div class="sidebar-header">
@@ -70,13 +73,13 @@
         </div>
         
         <div class="input-area">
-  <label for="image-upload" class="image-upload-btn">
-    📎
-    <input type="file" id="image-upload" accept="image/*" style="display: none;">
-  </label>
-  <input type="text" id="message" placeholder="Сообщение..." autocomplete="off">
-  <button onclick="sendMessage()">Отправить</button>
-</div>
+          <label for="image-upload" class="image-upload-btn">
+            📎
+            <input type="file" id="image-upload" accept="image/*" style="display: none;">
+          </label>
+          <input type="text" id="message" placeholder="Сообщение..." autocomplete="off">
+          <button onclick="sendMessage()">Отправить</button>
+        </div>
       </div>
     </div>
   </div>
@@ -85,4 +88,5 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
