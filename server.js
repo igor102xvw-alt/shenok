@@ -10,6 +10,7 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 
+// Хэширование паролей
 const bcrypt = require('bcrypt');
 
 // Подключение к базе данных
@@ -261,62 +262,93 @@ io.on('connection', (socket) => {
     const to = data.to || 'general';
     
     const now = new Date();
-    const message = {
-      nickname: socket.nickname,
-      text: text,
-      time: now.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Europe/Moscow'
-      })
-    };
     
     if (to === 'general') {
-  // Общее сообщение
-  try {
-    const result = await pool.query(
-      'INSERT INTO messages (user_id, text) VALUES ($1, $2) RETURNING id, created_at',
-      [socket.userId, text]
-    );
-    
-    const messageId = result.rows[0].id;
-    const createdAt = result.rows[0].created_at;
-    
-    const messageWithId = {
-      id: messageId,
-      nickname: socket.nickname,
-      text: text,
-      time: new Date(createdAt).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Europe/Moscow'
-      })
-    };
-    
-    messages.push(messageWithId);
-    if (messages.length > 500) {
-      messages.shift();
-    }
-    
-    io.emit('message', { ...messageWithId, to: 'general' });
-    console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
-  } catch (err) {
-    console.error('❌ Ошибка сохранения общего сообщения:', err);
-  }
-}
-      // Отправляем сообщение обоим участникам
-      io.to(socket.id).emit('message', { ...message, to, from: socket.nickname });
-      
-      // Находим сокет получателя
-      const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
-        user.nickname === to
-      );
-      
-      if (recipientSocket) {
-        const [recipientId] = recipientSocket;
-        io.to(recipientId).emit('message', { ...message, to, from: socket.nickname });
+      // Общее сообщение
+      try {
+        const result = await pool.query(
+          'INSERT INTO messages (user_id, text) VALUES ($1, $2) RETURNING id, created_at',
+          [socket.userId, text]
+        );
+        
+        const messageId = result.rows[0].id;
+        const createdAt = result.rows[0].created_at;
+        
+        const messageWithId = {
+          id: messageId,
+          nickname: socket.nickname,
+          text: text,
+          time: new Date(createdAt).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
+        };
+        
+        messages.push(messageWithId);
+        if (messages.length > 500) {
+          messages.shift();
+        }
+        
+        io.emit('message', { ...messageWithId, to: 'general' });
+        console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
+      } catch (err) {
+        console.error('❌ Ошибка сохранения общего сообщения:', err);
+      }
+    } else {
+      // Приватное сообщение
+      try {
+        // Находим получателя по логину
+        const recipientResult = await pool.query(
+          'SELECT id FROM users WHERE login = $1',
+          [to]
+        );
+        
+        if (recipientResult.rows.length === 0) {
+          console.error('❌ Получатель не найден:', to);
+          return;
+        }
+        
+        const recipientId = recipientResult.rows[0].id;
+        
+        // Сохраняем в БД
+        const result = await pool.query(
+          'INSERT INTO private_messages (sender_id, recipient_id, text) VALUES ($1, $2, $3) RETURNING id, created_at',
+          [socket.userId, recipientId, text]
+        );
+        
+        const messageId = result.rows[0].id;
+        const createdAt = result.rows[0].created_at;
+        
+        const messageWithId = {
+          id: messageId,
+          nickname: socket.nickname,
+          text: text,
+          time: new Date(createdAt).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Europe/Moscow'
+          })
+        };
+        
+        console.log(`✅ Приватное сообщение сохранено: ${socket.nickname} → ${to}, ID: ${messageId}`);
+        
+        // Отправляем сообщение обоим участникам
+        io.to(socket.id).emit('message', { ...messageWithId, to, from: socket.nickname });
+        
+        // Находим сокет получателя
+        const recipientSocket = Array.from(users.entries()).find(([id, user]) => 
+          user.nickname === to
+        );
+        
+        if (recipientSocket) {
+          const [recipientId] = recipientSocket;
+          io.to(recipientId).emit('message', { ...messageWithId, to, from: socket.nickname });
+        }
+      } catch (err) {
+        console.error('❌ Ошибка сохранения приватного сообщения:', err);
       }
     }
   });
@@ -422,7 +454,7 @@ io.on('connection', (socket) => {
     }
   });
 
- // Загрузка истории чата
+  // Загрузка истории чата
   socket.on('get_history', async (chatName) => {
     if (!socket.userId) return;
     
@@ -530,7 +562,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
-
-
-
-
