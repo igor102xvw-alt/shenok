@@ -525,9 +525,22 @@ function contextMenuReply() {
   const nickname = currentMessageElement.querySelector('.message-nickname').textContent;
   const messageText = currentMessageElement.querySelector('.message-text').textContent;
   
+  // Сохраняем информацию о цитате
+  const quoteData = {
+    nickname: nickname,
+    text: messageText
+  };
+  
+  // Сохраняем в локальном хранилище
+  localStorage.setItem('quoteData', JSON.stringify(quoteData));
+  
+  // Добавляем @username в поле ввода
   const input = document.getElementById('message');
   input.value = `@${nickname} `;
   input.focus();
+  
+  // Показываем превью цитаты над полем ввода
+  showQuotePreview(quoteData);
   
   closeContextMenu();
 }
@@ -573,6 +586,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
