@@ -1,9 +1,10 @@
+// 🟨 Подключение к сокету
 const socket = io();
 let myLogin = ''; // Теперь храним логин вместо ника
-let currentChat = 'general'; // 'general' или логин пользователя
+let currentChat = null; // Теперь null, пока не выбран собеседник
 const typingUsers = new Map();
 
-// ==================== ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
+// ==================== 🟦 ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
 
 function showLoginForm() {
   document.getElementById('login-form').classList.remove('hidden');
@@ -17,7 +18,7 @@ function showRegisterForm() {
   document.getElementById('register-login').focus();
 }
 
-// ==================== РЕГИСТРАЦИЯ ====================
+// ==================== 🟩 РЕГИСТРАЦИЯ ====================
 
 function register() {
   const login = document.getElementById('register-login').value.trim();
@@ -56,7 +57,7 @@ function showRegisterError(msg) {
   }
 }
 
-// ==================== ВХОД ====================
+// ==================== 🔑 ВХОД ====================
 
 function login() {
   const login = document.getElementById('login').value.trim();
@@ -70,19 +71,17 @@ function login() {
   socket.emit('login', { login, password });
 }
 
-// В обработчике login_success (строка ~115)
 socket.on('login_success', () => {
   myLogin = document.getElementById('login').value.trim();
   document.getElementById('login-screen').remove();
   document.getElementById('chat-screen').classList.remove('hidden');
   document.getElementById('message').focus();
   
-  // Добавляем проверку
   const errorEl = document.getElementById('error');
   if (errorEl) errorEl.textContent = '';
 });
 
-// ==================== СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
+// ==================== 📃 СПИСОК ПОЛЬЗОВАТЕЛЕЙ ====================
 
 socket.on('users_update', (users) => {
   const chatsList = document.getElementById('chats-list');
@@ -90,21 +89,7 @@ socket.on('users_update', (users) => {
   
   chatsList.innerHTML = '';
   
-  // Общий чат
-  const generalChat = document.createElement('div');
-  generalChat.className = `chat-item general ${currentChat === 'general' ? 'active' : ''}`;
-  generalChat.dataset.chat = 'general';
-  generalChat.innerHTML = `
-    <div class="chat-avatar">👥</div>
-    <div class="chat-info">
-      <div class="chat-name">Общий чат</div>
-      <div class="chat-last-message">Все сообщения</div>
-    </div>
-  `;
-  generalChat.addEventListener('click', () => switchChat('general'));
-  chatsList.appendChild(generalChat);
-  
-  // Пользователи
+  // 🟨 Убираем общий чат, теперь только пользователи
   users.forEach(user => {
     if (user.nickname === myLogin) return;
     
@@ -118,7 +103,7 @@ socket.on('users_update', (users) => {
       <div class="chat-avatar">${firstLetter}</div>
       <div class="chat-info">
         <div class="chat-name">${escapeHtml(user.nickname)}</div>
-        <div class="chat-last-message">${user.online ? 'в сети' : 'оффлайн'}</div>
+        <div class="chat-status">${user.online ? '🟢 в сети' : '🔴 оффлайн'}</div>
       </div>
     `;
     
@@ -127,7 +112,7 @@ socket.on('users_update', (users) => {
   });
 });
 
-// Переключение между чатами
+// 🟦 Переключение между чатами
 function switchChat(chatName) {
   currentChat = chatName;
   
@@ -143,21 +128,16 @@ function switchChat(chatName) {
   }
   
   // Меняем заголовок
-  const chatHeader = document.querySelector('.chat-header h2');
+  const chatHeader = document.getElementById('current-chat-name');
   if (chatHeader) {
-    chatHeader.textContent = chatName === 'general' ? '💬 Общий чат' : `💬 ${chatName}`;
+    chatHeader.textContent = `💬 ${chatName}`;
   }
   
   // Меняем аватарку
   const headerAvatar = document.querySelector('.chat-header-avatar');
   if (headerAvatar) {
-    if (chatName === 'general') {
-      headerAvatar.textContent = '👥';
-      headerAvatar.style.background = '#66ff00';
-    } else {
-      headerAvatar.textContent = chatName.charAt(0).toUpperCase();
-      headerAvatar.style.background = '#66ff00';
-    }
+    headerAvatar.textContent = chatName.charAt(0).toUpperCase();
+    headerAvatar.style.background = '#66ff00';
   }
   
   // Очищаем сообщения и загружаем историю
@@ -172,23 +152,16 @@ function switchChat(chatName) {
   socket.emit('get_history', chatName);
 }
 
-// ==================== СООБЩЕНИЯ ====================
+// ==================== 💬 СООБЩЕНИЯ ====================
 
 socket.on('history', (messages) => {
   messages.forEach(msg => addMessage(msg));
 });
 
 socket.on('message', (msg) => {
-  if (msg.to && msg.to !== 'general') {
-    // Приватное сообщение
-    if (msg.to === currentChat || msg.from === currentChat) {
-      addMessage(msg);
-    }
-  } else {
-    // Общее сообщение
-    if (currentChat === 'general') {
-      addMessage(msg);
-    }
+  // Теперь только приватные сообщения
+  if (msg.to && (msg.to === currentChat || msg.from === currentChat)) {
+    addMessage(msg);
   }
 });
 
@@ -233,27 +206,29 @@ function addMessage(msg) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// ==================== ОТПРАВКА СООБЩЕНИЙ ====================
+// ==================== 📨 ОТПРАВКА СООБЩЕНИЙ ====================
 
 function sendMessage() {
   const input = document.getElementById('message');
   const text = input.value.trim();
   
-  if (text) {
+  if (text && currentChat) {
     socket.emit('message', { 
       text, 
-      to: currentChat === 'general' ? 'general' : currentChat 
+      to: currentChat // Теперь всегда ник получателя
     });
     input.value = '';
   }
 }
 
-// ==================== СТАТУС ПЕЧАТИ ====================
+// ==================== ✍️ СТАТУС ПЕЧАТИ ====================
 
 let typingTimeout = null;
 const TYPING_DELAY = 3000;
 
 document.getElementById('message')?.addEventListener('input', () => {
+  if (!currentChat) return; // Только если выбран чат
+  
   socket.emit('typing', { isTyping: true });
   
   if (typingTimeout) clearTimeout(typingTimeout);
@@ -279,7 +254,7 @@ function updateTypingDisplay() {
   const typingIndicator = document.getElementById('typing-indicator');
   if (!typingIndicator) return;
   
-  if (typingUsers.size > 0 && currentChat === 'general') {
+  if (typingUsers.size > 0 && currentChat) {
     const users = Array.from(typingUsers.keys()).join(', ');
     typingIndicator.textContent = `${users} печатает...`;
     typingIndicator.classList.remove('hidden');
@@ -288,10 +263,10 @@ function updateTypingDisplay() {
   }
 }
 
-// ==================== ОБРАБОТЧИКИ КЛАВИАТУРЫ ====================
+// ==================== ⌨️ ОБРАБОТЧИКИ КЛАВИАТУРЫ ====================
 
 document.getElementById('message')?.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter' && currentChat) sendMessage();
 });
 
 document.getElementById('password')?.addEventListener('keypress', (e) => {
@@ -302,7 +277,7 @@ document.getElementById('register-password-confirm')?.addEventListener('keypress
   if (e.key === 'Enter') register();
 });
 
-// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+// ==================== 🛠️ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
 function showError(msg) {
   const errorEl = document.getElementById('error');
@@ -323,4 +298,3 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
