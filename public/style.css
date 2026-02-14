@@ -1,9 +1,11 @@
+/* 🟦 Сброс стилей */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* 🟨 Основной фон */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #0a0a0a; /* Было #000 */
@@ -32,7 +34,7 @@ body {
   margin-top: 10px;
 }
 
-/* Экран входа */
+/* 🟩 Экран входа */
 .login-container {
   padding: 40px;
   text-align: center;
@@ -98,7 +100,7 @@ body {
   box-shadow: 0 5px 15px rgba(102, 255, 0, 0.4);
 }
 
-/* Переключение между формами */
+/* 🔑 Переключение между формами */
 .switch-form {
   margin-top: 15px;
   font-size: 14px;
@@ -115,14 +117,14 @@ body {
   text-decoration: underline;
 }
 
-/* Основной интерфейс чата */
+/* 💬 Основной интерфейс чата */
 .app-container {
   display: flex;
   width: 100%;
   height: 100%;
 }
 
-/* Левая панель: Список пользователей */
+/* 📃 Левая панель: Список пользователей */
 .sidebar {
   width: 280px;
   min-width: 280px;
@@ -151,7 +153,7 @@ body {
   padding: 10px;
 }
 
-/* Элементы списка чатов */
+/* 🟦 Элементы списка чатов */
 .chat-item {
   display: flex;
   align-items: center;
@@ -175,11 +177,7 @@ body {
   box-shadow: 0 0 10px rgba(102, 255, 0, 0.3);
 }
 
-.chat-item.general {
-  background: #151515;
-  border: 1px solid #66ff00;
-  margin-bottom: 15px;
-}
+/* 🟨 Удалили .chat-item.general */
 
 .chat-avatar {
   width: 40px;
@@ -207,12 +205,12 @@ body {
   margin-bottom: 3px;
 }
 
-.chat-last-message {
+.chat-status {
   font-size: 13px;
   color: #888;
 }
 
-/* Правая панель: Чат */
+/* 📨 Правая панель: Чат */
 .chat-container {
   flex: 1;
   display: flex;
@@ -264,7 +262,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100% - 110px);
+  height: calc(100% - 110px); /* Убрана высота под индикатор печати */
 }
 
 .message {
@@ -328,7 +326,7 @@ body {
   color: #fff;
 }
 
-/* Контейнер индикатора печати */
+/* ✍️ Контейнер индикатора печати */
 .typing-indicator-container {
   padding: 10px 20px;
   background: #0d0d0d;
@@ -338,7 +336,7 @@ body {
   align-items: center;
 }
 
-/* Индикатор "печатает..." */
+/* ✍️ Индикатор "печатает..." */
 .typing-indicator {
   background: rgba(102, 255, 0, 0.1);
   color: #66ff00;
@@ -403,7 +401,7 @@ body {
   box-shadow: 0 0 20px rgba(102, 255, 0, 0.5);
 }
 
-/* Мобильная версия */
+/* 📱 Мобильная версия */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
