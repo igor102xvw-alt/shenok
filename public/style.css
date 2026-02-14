@@ -177,8 +177,13 @@ body {
 
 .chat-item.general {
   background: #151515;
-  border: 1px solid #66ff00;
   margin-bottom: 15px;
+  /* Убрали border: 1px solid #66ff00 — теперь граница появляется ТОЛЬКО при активном состоянии */
+}
+
+/* Добавим специфичный стиль для активного общего чата */
+.chat-item.general.active {
+  border: 1px solid #66ff00;
 }
 
 .chat-avatar {
@@ -423,3 +428,4 @@ body {
     max-width: 90%;
   }
 }
+
