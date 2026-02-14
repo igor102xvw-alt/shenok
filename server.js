@@ -44,6 +44,7 @@ const users = new Map();
 const messages = [];
 
 // Создание таблиц при запуске
+// Создание таблиц при запуске
 async function createTables() {
   try {
     // Таблица пользователей
@@ -99,6 +100,33 @@ async function createTables() {
     } catch (err) {
       if (err.code !== '42701') { // 42701 = duplicate_column
         console.error('Ошибка при добавлении edited_at в private_messages:', err);
+      }
+    }
+    
+    // Добавляем колонки для цитат
+    try {
+      await pool.query(`
+        ALTER TABLE messages 
+        ADD COLUMN quote_nickname VARCHAR(50),
+        ADD COLUMN quote_text TEXT
+      `);
+      console.log('✅ Колонки цитат добавлены в таблицу messages');
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении цитат в messages:', err);
+      }
+    }
+    
+    try {
+      await pool.query(`
+        ALTER TABLE private_messages 
+        ADD COLUMN quote_nickname VARCHAR(50),
+        ADD COLUMN quote_text TEXT
+      `);
+      console.log('✅ Колонки цитат добавлены в таблицу private_messages');
+    } catch (err) {
+      if (err.code !== '42701') { // 42701 = duplicate_column
+        console.error('Ошибка при добавлении цитат в private_messages:', err);
       }
     }
     
@@ -585,4 +613,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
