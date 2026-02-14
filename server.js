@@ -285,38 +285,39 @@ io.on('connection', (socket) => {
     const to = data.to || 'general';
     
     if (to === 'general') {
-      // Общее сообщение
-      try {
-        const result = await pool.query(
-          'INSERT INTO messages (user_id, text) VALUES ($1, $2) RETURNING id, created_at',
-          [socket.userId, text]
-        );
-        
-        const messageId = result.rows[0].id;
-        const createdAt = result.rows[0].created_at;
-        
-        const messageWithId = {
-          id: messageId,
-          nickname: socket.nickname,
-          text: text,
-          time: new Date(createdAt).toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false,
-            timeZone: 'Europe/Moscow'
-          })
-        };
-        
-        messages.push(messageWithId);
-        if (messages.length > 500) {
-          messages.shift();
-        }
-        
-        io.emit('message', { ...messageWithId, to: 'general' });
-        console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
-      } catch (err) {
-        console.error('❌ Ошибка сохранения общего сообщения:', err);
-      }
+  // Общее сообщение
+  try {
+    const result = await pool.query(
+      'INSERT INTO messages (user_id, text) VALUES ($1, $2) RETURNING id, created_at',
+      [socket.userId, text]
+    );
+    
+    const messageId = result.rows[0].id;
+    const createdAt = result.rows[0].created_at;
+    
+    const messageWithId = {
+      id: messageId,
+      nickname: socket.nickname,
+      text: text,
+      time: new Date(createdAt).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Moscow'
+      }),
+      quote: data.quote // Добавляем цитату
+    };
+    
+    messages.push(messageWithId);
+    if (messages.length > 500) {
+      messages.shift();
+    }
+    
+    io.emit('message', { ...messageWithId, to: 'general' });
+    console.log('✅ Общее сообщение сохранено в БД, ID:', messageId);
+  } catch (err) {
+    console.error('❌ Ошибка сохранения общего сообщения:', err);
+  }
     } else {
       // Приватное сообщение
       try {
@@ -583,4 +584,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
