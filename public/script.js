@@ -4,6 +4,15 @@ let currentChat = 'general';
 let currentImageFile = null;
 const typingUsers = new Map();
 
+// Управление мобильным меню
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const chatContainer = document.querySelector('.chat-container');
+  
+  sidebar.classList.toggle('active');
+  chatContainer.classList.toggle('sidebar-open');
+}
+
 // ==================== ПЕРЕКЛЮЧЕНИЕ ФОРМ ====================
 
 function showLoginForm() {
@@ -194,6 +203,15 @@ function switchChat(chatName) {
   
   // Загружаем историю
   socket.emit('get_history', chatName);
+  
+  // Закрываем меню на мобильных устройствах
+  const sidebar = document.querySelector('.sidebar');
+  const chatContainer = document.querySelector('.chat-container');
+  
+  if (sidebar && chatContainer) {
+    sidebar.classList.remove('active');
+    chatContainer.classList.remove('sidebar-open');
+  }
   
   console.log('=== switchChat завершён ===');
 }
@@ -751,6 +769,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
