@@ -274,11 +274,23 @@ function addMessage(msg) {
     timeZone: 'Europe/Moscow'
   });
   
-  // Метка "изменено" если сообщение редактировалось
-  const editedLabel = msg.edited ? '<span class="message-edited">(изменено)</span>' : '';
+  // Формируем цитату если есть
+  let quoteHTML = '';
+  if (msg.quote) {
+    quoteHTML = `
+      <div class="message-quote">
+        <div class="quote-header">
+          <span class="quote-icon">💬</span>
+          <span class="quote-author">${escapeHtml(msg.quote.nickname)}</span>
+        </div>
+        <div class="quote-text">${escapeHtml(msg.quote.text)}</div>
+      </div>
+    `;
+  }
   
   msgDiv.innerHTML = `
     <div class="message-content">
+      ${quoteHTML}
       <div class="message-header">
         <div class="message-nickname">${escapeHtml(msg.nickname)}</div>
         <div class="message-time">${time}</div>
@@ -636,6 +648,7 @@ function contextMenuDelete() {
 
 // Инициализируем контекстное меню при загрузке
 document.addEventListener('DOMContentLoaded', initContextMenu);
+
 
 
 
