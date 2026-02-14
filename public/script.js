@@ -253,26 +253,31 @@ function addMessage(msg) {
   const editedLabel = msg.edited ? '<span class="message-edited">(изменено)</span>' : '';
   
   msgDiv.innerHTML = `
-  <div class="message-content">
-    <div class="message-header">
-      <div class="message-nickname">${escapeHtml(msg.nickname)}</div>
-      <div class="message-time">${time}</div>
-    </div>
-    <div class="message-text">${escapeHtml(msg.text)}</div>
-    ${isOwn ? `
-      <div class="message-actions">
-        <button class="btn-edit" onclick="editMessage(this)">✏️</button>
-        <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
+    <div class="message-content">
+      <div class="message-header">
+        <div class="message-nickname">${escapeHtml(msg.nickname)}</div>
+        <div class="message-time">${time}</div>
+        ${msg.edited ? '<span class="message-edited">(изменено)</span>' : ''}
       </div>
-    ` : ''}
-  </div>
-`;
-
-// Добавляем обработчик правого клика для контекстного меню
-msgDiv.addEventListener('contextmenu', (e) => {
-  openContextMenu(e, msgDiv);
-});
+      <div class="message-text">${escapeHtml(msg.text)}</div>
+      ${isOwn ? `
+        <div class="message-actions">
+          <button class="btn-edit" onclick="editMessage(this)">✏️</button>
+          <button class="btn-delete" onclick="deleteMessage(this)">🗑️</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  // Добавляем обработчик правого клика для контекстного меню
+  msgDiv.addEventListener('contextmenu', (e) => {
+    openContextMenu(e, msgDiv);
+  });
+  
+  messagesDiv.appendChild(msgDiv);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
+
 // ==================== ОТПРАВКА СООБЩЕНИЙ ====================
 
 function sendMessage() {
@@ -364,6 +369,8 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
+// ==================== РЕДАКТИРОВАНИЕ/УДАЛЕНИЕ СООБЩЕНИЙ ====================
+
 // Редактирование сообщения
 function editMessage(btn) {
   const messageDiv = btn.closest('.message');
@@ -430,7 +437,8 @@ socket.on('message_deleted', (data) => {
   }
 });
 
-// Контекстное меню
+// ==================== КОНТЕКСТНОЕ МЕНЮ ====================
+
 let contextMenu = null;
 let contextMenuOverlay = null;
 let currentMessageElement = null;
